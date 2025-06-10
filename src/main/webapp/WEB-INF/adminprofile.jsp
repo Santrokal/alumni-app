@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ page import="java.util.List, java.text.SimpleDateFormat" %>
+<%@ page import="java.net.URLEncoder" %>
+
     <%@ page import="com.shc.alumni.springboot.entity.BillPdfEntity" %>
     <%@ page import="com.shc.alumni.springboot.entity.ContactEntity" %>
     <%@ page import="com.shc.alumni.springboot.entity.AdminEntity" %>
@@ -544,14 +546,15 @@
             <!-- Profile Dropdown -->
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                    <%
-                        AdminEntity admin = (AdminEntity) request.getAttribute("admin");
-                        String imageSrc = admin != null && admin.getEmailAddress() != null
-                                ? request.getContextPath() + "/admin/profile/image?email=" + admin.getEmailAddress()
-                                : request.getContextPath() + "/images/default.jpg";
-                    %>
-                    <img src="<%= imageSrc %>" alt="Profile Image" 
-                         class="rounded-circle me-lg-2" style="width: 40px; height: 40px; object-fit: cover;">
+<%
+    AdminEntity admin = (AdminEntity) request.getAttribute("admin");
+
+%>
+                    <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image" class="rounded-circle me-lg-2" 
+                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+
+
+
                     <span class="d-none d-lg-inline-flex">
                         <%= admin != null ? admin.getFullName() : "Unknown" %>
                     </span>
@@ -571,9 +574,8 @@
             <h1>Admin Profile</h1>
         </div>
         <div style="text-align: center; margin-bottom: 20px;">
-            <img src="<%= imageSrc %>" alt="Profile Image" 
-                 class="rounded-circle me-lg-2" style="width: 70px; height: 70px; object-fit: cover;">
-        </div>
+             <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image" class="img-fluid" 
+                     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">       </div>
         <%
             if (admin != null) {
         %>
@@ -591,7 +593,7 @@
             }
         %>
         <div class="text-center">
-            <a href="<%= request.getContextPath() %>/admin/editprofile" class="btn-custom">Edit Profile</a>
+            <a href="<%= request.getContextPath() %>/admin/adminprofile" class="btn-custom">Edit Profile</a>
         </div>
     </div>
     <!-- Footer -->

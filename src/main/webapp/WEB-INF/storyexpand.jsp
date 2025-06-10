@@ -43,21 +43,6 @@ body {
 }
 
 /* Fade-in Animation */
-@keyframes fadeIn { 0% {
-	opacity: 0;
-}
-
-100
-%
-{
-opacity
-:
-1;
-}
-}
-@keyframes spin-in {from { transform:rotate(-360deg);
-	opacity: 0;
-}
 
 to {
 	transform: rotate(0deg);
@@ -296,16 +281,19 @@ table th {
             response.sendRedirect(request.getContextPath() + "/404");
             return;
         }
-        String imageUrl = stories.getStoryImagePath() != null ? request.getContextPath() + "/story_media/" + stories.getStoryImagePath() : request.getContextPath() + "/images/default_image.jpg";
+        String imageUrl = stories.getStoryImagePath() != null ? request.getContextPath() + "/story_folder/" + stories.getStoryImagePath() : request.getContextPath() + "/images/default_image.jpg";
         System.out.println("Image URL for story " + stories.getId() + ": " + imageUrl);
     %>
     <div class="container mx-auto max-w-3xl">
         <!-- Story Details -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden animate-fade-in-up">
-            <img class="w-full h-64 object-cover" 
-                 src="<%= imageUrl %>" 
-                 alt="Story Image" 
-                 onerror="this.src='<%= request.getContextPath() %>/images/default_image.jpg'">
+            <div class="flex mt-5 justify-center items-center w-auto h-auto">
+  <img class="max-w-full max-h-full object-contain"
+       src="<%= imageUrl %>" 
+       alt="Story Image"
+       onerror="this.src='<%= request.getContextPath() %>/images/alumni_default_img.png'" />
+</div>
+
             <div class="p-6">
                 <h1 class="story-title"><%= stories.getTitle() != null ? stories.getTitle() : "No Title Available" %></h1>
                 <p class="story-content">

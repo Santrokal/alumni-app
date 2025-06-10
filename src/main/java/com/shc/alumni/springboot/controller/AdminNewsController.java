@@ -73,6 +73,24 @@ public class AdminNewsController {
 	        for (News news : newsList) {
 	            categorizedNews.computeIfAbsent(news.getCategory(), k -> new ArrayList<>()).add(news);
 	        }
+	        // Retrieve the logged-in admin from session
+            AdminEntity loggedInAdmin = (AdminEntity) session.getAttribute("loggedInUser");
+            if (loggedInAdmin == null) {
+                return "redirect:/";
+            }
+	        
+	        String base64Image = "";
+	        if (loggedInAdmin.getImagePath() != null) {
+	            try {
+	                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
+	                base64Image = Base64.getEncoder().encodeToString(imageBytes);
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+	        }
+			
+	        // Add admin details to the model
+	        model.addAttribute("base64Image", base64Image);
 
 	        // Add sorted and categorized news to the model
 	        model.addAttribute("newsList", newsList);
@@ -99,7 +117,7 @@ public class AdminNewsController {
 	        return "adminnews";
 	    }
 	    
-	 @PostMapping("/admin/addnews")
+	    @PostMapping("/admin/addnews")
 	    public ResponseEntity<Object> addNews(
 	            @RequestParam("title") String title,
 	            @RequestParam("content") String content,
@@ -107,63 +125,19 @@ public class AdminNewsController {
 	            @RequestParam(value = "mediaFiles", required = false) MultipartFile[] mediaFiles,
 	            HttpServletRequest request) {
 
-	        System.out.println("Received title: " + title);
-	        System.out.println("Received content: " + content);
-	        System.out.println("Received category: " + category);
-	        System.out.println("Received files: " + (mediaFiles != null ? mediaFiles.length : "0"));
-
 	        try {
-	            News news = new News();
-	            news.setTitle(title);
-	            news.setContent(content);
-	            news.setCategory(category);
-	            news.setCreatedAt(LocalDateTime.now());
-
-	            List<String> mediaPaths = new ArrayList<>();
-
-	            // Get dynamic upload path
-	            ServletContext servletContext = request.getServletContext();
-	            String appRoot = servletContext.getRealPath("/");
-	            if (appRoot == null) {
-	                appRoot = System.getProperty("user.dir") + "/webapp/";
-	            }
-
-	            Path uploadPath = Paths.get(appRoot, "news_folder");
-
-	            // Create folder if it doesn't exist
-	            if (!Files.exists(uploadPath)) {
-	                Files.createDirectories(uploadPath);
-	                System.out.println("Created upload directory: " + uploadPath);
-	            }
-
-	            // Save media files if present
-	            if (mediaFiles != null && mediaFiles.length > 0) {
-	                if (mediaFiles.length > 5) {
-	                    throw new IllegalArgumentException("Maximum 5 files allowed");
-	                }
-
-	                for (MultipartFile file : mediaFiles) {
-	                    if (!file.isEmpty()) {
-	                        String originalFileName = file.getOriginalFilename();
-	                        String filename = System.currentTimeMillis() + "_" + originalFileName;
-	                        Path filePath = uploadPath.resolve(filename);
-	                        file.transferTo(filePath);
-	                        mediaPaths.add(filename); // Store only filename
-	                        System.out.println("Saved media file: " + filePath);
-	                    }
-	                }
-	            }
-
-	            news.setMediaPaths(mediaPaths);
-	            newsService.saveNews(news); // Save News entity to DB
-
-	            return ResponseEntity.status(HttpStatus.CREATED).body("{\"message\": \"News added successfully!\"}");
-	        } catch (Exception e) {
-	            e.printStackTrace();
+	            newsService.saveNews(title, content, category, mediaFiles, request);
+	            return ResponseEntity.status(HttpStatus.CREATED)
+	                    .body("{\"message\": \"News added successfully!\"}");
+	        } catch (IllegalArgumentException e) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+	        } catch (IOException e) {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 	                    .body("{\"error\": \"Error saving news: " + e.getMessage() + "\"}");
 	        }
 	    }
+
 
 	 
 	 
@@ -188,31 +162,28 @@ public class AdminNewsController {
 	 }
 	 
 	 
-	 
-	 
 	 @GetMapping("/admin/stories")
-	 public String getAllStory(Model model, HttpSession session, HttpServletRequest request) {
-	     List<StoryEntity> rawStories = storyService.findAll();
+	    public String getAllStory(Model model, HttpSession session) {
+	        List<StoryEntity> rawStories = storyService.findAll();
+	        System.out.println("Raw Stories from DB (Count: " + (rawStories != null ? rawStories.size() : 0) + "):");
+	        if (rawStories != null) {
+	            rawStories.forEach(story -> System.out.println("ID: " + story.getId() + ", Title: " + story.getTitle() + ", Image Path: " + story.getStoryImagePath()));
+	        } else {
+	            System.out.println("No stories retrieved from the database.");
+	        }
 
-	     List<StoryEntity> storiesList = rawStories != null ? rawStories.stream()
-	             .filter(distinctByKey(story -> story.getId() + "-" + story.getTitle()))
-	             .sorted(Comparator.comparing(StoryEntity::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-	             .collect(Collectors.toList()) : null;
+	        List<StoryEntity> storiesList = rawStories != null ? rawStories.stream()
+	                .filter(distinctByKey(story -> story.getId() + "-" + story.getTitle()))
+	                .sorted(Comparator.comparing(StoryEntity::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+	                .collect(Collectors.toList()) : null;
 
-	     // Add image URL prefix for displaying
-	     String baseUrl = request.getContextPath(); // returns something like "/alumni-app"
-	     String imageBasePath = baseUrl + "/story_folder/";
-
-	     // Append full image path to each story
-	     if (storiesList != null) {
-	         for (StoryEntity story : storiesList) {
-	             if (story.getStoryImagePath() != null) {
-	                 story.setStoryImagePath(imageBasePath + story.getStoryImagePath());
-	             }
-	         }
-	     }
-
-	     // Admin check
+	        System.out.println("Final Stories List (Count: " + (storiesList != null ? storiesList.size() : 0) + ")");
+	        if (storiesList != null) {
+	            storiesList.forEach(story -> 
+	                    System.out.println("ID: " + story.getId() + ", Title: " + (story.getTitle() != null ? story.getTitle() : "Untitled") + ", Image Path: " + story.getStoryImagePath()));
+	        }
+	        model.addAttribute("storiesList", storiesList);
+	        // Admin check
 	        AdminEntity loggedInAdmin = (AdminEntity) session.getAttribute("loggedInUser");
 	        if (loggedInAdmin == null) {
 	            return "redirect:/";
@@ -229,13 +200,10 @@ public class AdminNewsController {
 	            }
 	        }
 			
-
+	        model.addAttribute("base64Image", base64Image);
 	     model.addAttribute("storiesList", storiesList);
-	     model.addAttribute("admin", loggedInAdmin);
-	     model.addAttribute("base64Image", base64Image);
-
-	     return "adminstories";
-	 }
+	        return "adminstories";
+	    }
 
 
 	    @GetMapping("/admin/deleteStories")

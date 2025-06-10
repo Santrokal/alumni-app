@@ -274,8 +274,8 @@
             </select>
         </div>
         <div class="form-group">
-            <label><span style="color: red;">*</span>Upload Media (up to 5 images/videos):</label>
-            <input type="file" name="mediaFiles" class="form-control" accept="image/*,video/*" multiple required>
+            <label>Upload Media (up to 5 images/videos):</label>
+            <input type="file" name="mediaFiles" class="form-control" accept="image/*,video/*">
             <small class="form-text text-muted">Supported formats: images and videos (max 5 files)</small>
         </div>
                     <!-- Inside the form -->

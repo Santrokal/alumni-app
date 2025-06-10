@@ -608,7 +608,7 @@
                         (firstMediaFilename.toLowerCase().endsWith(".mp4") || 
                          firstMediaFilename.toLowerCase().endsWith(".mov") || 
                          firstMediaFilename.toLowerCase().endsWith(".webm"));
-                    String mediaUrl = request.getContextPath() + "/media/" + firstMediaFilename;
+                    String mediaUrl = request.getContextPath() + "/news_folder/" + firstMediaFilename;
                 %>
                     <tr>
                         <td><%= index++ %></td>
@@ -623,10 +623,10 @@
                                     <img src="<%= mediaUrl %>" 
                                          alt="News Image" 
                                          style="width: 100px; height: 80px; object-fit: cover;"
-                                         onerror="this.src='<%= request.getContextPath() %>/images/default-news.jpg'">
+                                         onerror="this.src='<%= request.getContextPath() %>/images/news_default_image.jpg'">
                                 <% } %>
                             <% } else { %>
-                                <img src="<%= request.getContextPath() %>/images/default-news.jpg" 
+                                <img src="<%= request.getContextPath() %>/images/news_default_image.jpg" 
                                      alt="Default Image" 
                                      style="width: 100px; height: 80px; object-fit: cover;">
                             <% } %>

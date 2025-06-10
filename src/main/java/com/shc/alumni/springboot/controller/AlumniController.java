@@ -1,5 +1,6 @@
 package com.shc.alumni.springboot.controller;
 
+import com.shc.alumni.springboot.entity.AdminEntity;
 import com.shc.alumni.springboot.entity.AlumniRegisterEntity;
 import com.shc.alumni.springboot.entity.FormField;
 import com.shc.alumni.springboot.service.AgmMembershipService;
@@ -13,6 +14,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -138,6 +144,25 @@ public class AlumniController {
             logger.warn("Unauthorized access to view AGM responses. Redirecting to login.");
             return "redirect:/";
         }
+        
+        // Retrieve the logged-in admin from session
+        AdminEntity loggedInAdmin = (AdminEntity) session.getAttribute("loggedInUser");
+        if (loggedInAdmin == null) {
+            return "redirect:/";
+        }
+        
+        String base64Image = "";
+        if (loggedInAdmin.getImagePath() != null) {
+            try {
+                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
+                base64Image = Base64.getEncoder().encodeToString(imageBytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+		
+        // Add admin details to the model
+        model.addAttribute("base64Image", base64Image);
 
         try {
             List<FormField> fields = formService.getFormFields();

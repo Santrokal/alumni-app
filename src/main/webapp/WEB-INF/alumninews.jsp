@@ -286,15 +286,15 @@
                 <% if (!mainFirstMediaFilename.isEmpty()) { %>
                     <% if (mainIsVideo) { %>
                         <video class="img-fluid w-100" style="height: 350px; object-fit: cover;" autoplay loop muted playsinline>
-                            <source src="<%= request.getContextPath() %>/media/<%= mainFirstMediaFilename %>" type="video/mp4">
+                            <source src="<%= request.getContextPath() %>/news_folder/<%= mainFirstMediaFilename %>" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     <% } else { %>
-                        <img src="<%= request.getContextPath() %>/media/<%= mainFirstMediaFilename %>" 
+                        <img src="<%= request.getContextPath() %>/news_folder/<%= mainFirstMediaFilename %>" 
                              class="img-fluid w-100" style="height: 350px; object-fit: cover;">
                     <% } %>
                 <% } else { %>
-                    <img src="<%= request.getContextPath() %>/images/default-news.jpg" 
+                    <img src="<%= request.getContextPath() %>/images/news_default_image.jpg" 
                          class="img-fluid w-100" style="height: 350px; object-fit: cover;">
                 <% } %>
                 <div class="overlay position-absolute bottom-0 p-3" style="background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);">
@@ -324,15 +324,15 @@
                         <% if (!firstMediaFilename.isEmpty()) { %>
                             <% if (isVideo) { %>
                                 <video class="img-fluid w-100" style="height: 120px; object-fit: cover;" autoplay loop muted playsinline>
-                                    <source src="<%= request.getContextPath() %>/media/<%= firstMediaFilename %>" type="video/mp4">
+                                    <source src="<%= request.getContextPath() %>/news_folder/<%= firstMediaFilename %>" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
                             <% } else { %>
-                                <img src="<%= request.getContextPath() %>/media/<%= firstMediaFilename %>" 
+                                <img src="<%= request.getContextPath() %>/news_folder/<%= firstMediaFilename %>" 
                                      class="img-fluid w-100" style="height: 120px; object-fit: cover;">
                             <% } %>
                         <% } else { %>
-                            <img src="<%= request.getContextPath() %>/images/default-news.jpg" 
+                            <img src="<%= request.getContextPath() %>/images/news_default_image.jpg" 
                                  class="img-fluid w-100" style="height: 120px; object-fit: cover;">
                         <% } %>
                         <div class="overlay position-absolute bottom-0 p-2" style="background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);">
@@ -368,15 +368,15 @@
                                 <% if (!firstMediaFilename.isEmpty()) { %>
                                     <% if (isVideo) { %>
                                         <video class="card-img-top" style="object-fit: cover; height: 130px;" muted>
-                                            <source src="<%= request.getContextPath() %>/media/<%= firstMediaFilename %>" type="video/mp4">
+                                            <source src="<%= request.getContextPath() %>/news_folder/<%= firstMediaFilename %>" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
                                     <% } else { %>
-                                        <img class="card-img-top" src="<%= request.getContextPath() %>/media/<%= firstMediaFilename %>" 
+                                        <img class="card-img-top" src="<%= request.getContextPath() %>/news_folder/<%= firstMediaFilename %>" 
                                              alt="News Image" style="object-fit: cover; height: 130px;">
                                     <% } %>
                                 <% } else { %>
-                                    <img class="card-img-top" src="<%= request.getContextPath() %>/images/default-news.jpg" 
+                                    <img class="card-img-top" src="<%= request.getContextPath() %>/images/news_default_image.jpg" 
                                          alt="Default Image" style="object-fit: cover; height: 130px;">
                                 <% } %>
                                 <div class="card-body d-flex flex-column">

@@ -39,6 +39,7 @@
 body {
 	background-color: #f1f9fb;
 	font-family: Arial, sans-serif;
+	padding: center;
 }
 
 .programs-services {
@@ -85,41 +86,7 @@ body {
 }
 
 /* Back-to-Front Animation */
-@keyframes backToFront { 0% {
-	transform: translateZ(-50px) rotateX(-90deg);
-	opacity: 0;
-}
 
-50%
-{
-transform
-:
-translateZ(
-0
-)
-rotateX(
--45deg
-);
-opacity
-:
-0.5;
-}
-100
-%
-{
-transform
-:
-translateZ(
-0
-)
-rotateX(
-0deg
-);
-opacity
-:
-1;
-}
-}
 .list-item {
 	list-style: none;
 	padding: 0;
@@ -391,6 +358,8 @@ h2.heading-regular {
         .maintenance-container {
             max-width: 800px;
             text-align: center;
+            margin-left: auto;
+            md:auto;
         }
 
         .logo {
@@ -559,7 +528,7 @@ h2.heading-regular {
 	<!-- Header Section Ends -->
 
 <!-- About Us Section Starts -->
-<div class="maintenance-container">
+<div class="maintenance-container ">
         <!-- Logo -->
         <div class="logo"></div>
 

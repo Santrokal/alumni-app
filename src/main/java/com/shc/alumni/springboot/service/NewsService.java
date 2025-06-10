@@ -15,62 +15,102 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+
 @Service
 public class NewsService {
 
-    @Autowired
-    private NewsRepository newsRepository;
+	@Autowired
+	private NewsRepository newsRepository;
 
-    private static final String UPLOAD_DIR = "C:\\Users\\Mohammed Salman\\alumni-app\\news_folder\\";
+	public News getNewsById(int id) {
+		return newsRepository.findById((long) id).orElse(null);
+	}
 
-    public NewsService() {
-        File directory = new File(UPLOAD_DIR);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-    }
+	public List<News> findAll() {
+		return newsRepository.findAll();
+	}
 
-    public News getNewsById(int id) {
-        return newsRepository.findById((long) id).orElse(null);
-    }
+	public List<News> findTop5ByOrderByCreatedAtDesc() {
+		return newsRepository.findTop5ByOrderByCreatedAtDesc();
+	}
 
-    public List<News> findAll() {
-        return newsRepository.findAll();
-    }
+	public void saveNews(String title, String content, String category, MultipartFile[] mediaFiles,
+			HttpServletRequest request) throws IOException {
 
-    public List<News> findTop5ByOrderByCreatedAtDesc() {
-        return newsRepository.findTop5ByOrderByCreatedAtDesc();
-    }
+		News news = new News();
+		news.setTitle(title);
+		news.setContent(content);
+		news.setCategory(category);
+		news.setCreatedAt(LocalDateTime.now());
 
-    public void saveNews(News news) {
-        System.out.println("Saving news...");
-        try {
-            newsRepository.save(news);
-            System.out.println("News saved successfully!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error saving news: " + e.getMessage());
-        }
-    }
+		List<String> mediaPaths = new ArrayList<>();
 
+		if (mediaFiles != null && mediaFiles.length > 0) {
+			if (mediaFiles.length > 5) {
+				throw new IllegalArgumentException("Maximum 5 media files allowed");
+			}
 
-    public void deleteById(Long id) {
-        News news = newsRepository.findById(id).orElse(null);
-        if (news != null) {
-            List<String> mediaPaths = news.getMediaPaths();  // This should work with the getter above
-            if (mediaPaths != null && !mediaPaths.isEmpty()) {
-                for (String path : mediaPaths) {
-                    try {
-                        Files.deleteIfExists(Paths.get(path));
-                    } catch (IOException e) {
-                        System.err.println("Failed to delete file: " + path);
-                    }
-                }
-            }
-            newsRepository.deleteById(id);
-        } else {
-            throw new IllegalArgumentException("News with ID " + id + " does not exist.");
-        }
-    }
+			for (MultipartFile file : mediaFiles) {
+				if (!file.isEmpty()) {
+					String filename = saveMediaFileToFolder(file, request);
+					mediaPaths.add(filename);
+				}
+			}
+		}
+
+		news.setMediaPaths(mediaPaths);
+		newsRepository.save(news);
+	}
+
+	private String saveMediaFileToFolder(MultipartFile file, HttpServletRequest request) throws IOException {
+		// Get dynamic webapp root path
+		ServletContext servletContext = request.getServletContext();
+		String appRoot = servletContext.getRealPath("/");
+		if (appRoot == null) {
+			appRoot = System.getProperty("user.dir") + "/webapp/";
+		}
+
+		// Define folder name under app root
+		String folderName = "news_folder";
+		Path folderPath = Paths.get(appRoot, folderName);
+
+		// Create folder if it doesn't exist
+		if (!Files.exists(folderPath)) {
+			Files.createDirectories(folderPath);
+			System.out.println("Created directory: " + folderPath);
+		}
+
+		// Generate unique filename and save the file
+		String originalFileName = file.getOriginalFilename();
+		String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
+		Path filePath = folderPath.resolve(uniqueFilename);
+
+		file.transferTo(filePath.toFile());
+		System.out.println("Saved media file to: " + filePath);
+
+		return uniqueFilename;
+	}
+
+	public void deleteById(Long id) {
+		News news = newsRepository.findById(id).orElse(null);
+		if (news != null) {
+			List<String> mediaPaths = news.getMediaPaths(); // This should work with the getter above
+			if (mediaPaths != null && !mediaPaths.isEmpty()) {
+				for (String path : mediaPaths) {
+					try {
+						Files.deleteIfExists(Paths.get(path));
+					} catch (IOException e) {
+						System.err.println("Failed to delete file: " + path);
+					}
+				}
+			}
+			newsRepository.deleteById(id);
+		} else {
+			throw new IllegalArgumentException("News with ID " + id + " does not exist.");
+		}
+	}
+
 
 }

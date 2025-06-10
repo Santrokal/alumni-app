@@ -611,16 +611,16 @@
                     String imagePath = story.getStoryImagePath();
                     String imageUrl = imagePath != null && !imagePath.isEmpty() 
                         ? request.getContextPath() + "/story_folder/" + imagePath 
-                        : request.getContextPath() + "/images/default_image.jpg";
+                        : request.getContextPath() + "/images/alumni_default_img.png";
                 %>
                     <tr>
                         <td><%= index++ %></td>
                         <td>
                             <img src="<%= story.getStoryImagePath() != null 
         ? request.getContextPath() + "/story_folder/" + story.getStoryImagePath()
-        : request.getContextPath() + "/images/default_image.jpg" %>" 
+        : request.getContextPath() + "/images/alumni_default_img.png" %>" 
      alt="Story Image" width="100" height="100"
-     onerror="this.src='<%= request.getContextPath() %>/images/default_image.jpg'">
+     onerror="this.src='<%= request.getContextPath() %>/images/alumni_default_img.png'">
 
                         </td>
                         <td><%= story.getTitle() != null ? story.getTitle() : "Untitled" %></td>

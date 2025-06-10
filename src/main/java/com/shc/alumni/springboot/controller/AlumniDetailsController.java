@@ -148,8 +148,6 @@ public class AlumniDetailsController {
         model.addAttribute("alumniList", alumniList);
         
 
- 
-
         if (alumniList.isEmpty()) {
             model.addAttribute("message", "No alumni records found for the given year.");
         }

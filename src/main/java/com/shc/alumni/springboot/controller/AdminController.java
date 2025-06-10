@@ -17,20 +17,28 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 //import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,6 +59,13 @@ public class AdminController {
     @Autowired
     private ContactRepository contactRepository;
 
+
+    // Register AdminEntity
+    private static final String UPLOAD_DIR = "photograph";
+
+    @Autowired
+    private ServletContext servletContext;
+    
     // Show Registration Form
     @GetMapping("/register")
     public String showRegisterForm() {
@@ -140,6 +155,7 @@ public class AdminController {
 
     // Show AdminEntity Home Page
 
+    
 
     @GetMapping("/getalluser")
     public String getAllUsers(HttpSession session,Model model) {
@@ -199,36 +215,198 @@ public class AdminController {
         return "getalluser"; // This will render the getalluser.jsp page
     }
 
+   /*@GetMapping("/updateprofile")
+    public String showAdminUpdateProfileForm(HttpSession session, Model model) {
+        AdminEntity admin = (AdminEntity) session.getAttribute("loggedInUser");
 
+        if (admin == null) {
+            return "redirect:/"; // Not logged in
+        }
+
+        model.addAttribute("admin", admin);
+        return "adminupdateprofile"; 
+    }
+
+    @PostMapping("/updateprofile")
+    public String updateAdminProfile(
+            @RequestParam("fullName") String fullName,
+            @RequestParam("emailAddress") String emailAddress,
+            @RequestParam("password") String password,
+            @RequestParam("dob") String dob,
+            @RequestParam("phoneNo") String phoneNo,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            HttpSession session) {
+
+        AdminEntity admin = (AdminEntity) session.getAttribute("loggedInUser");
+        if (admin == null) {
+            return "redirect:/"; // Not logged in
+        }
+
+        try {
+            admin.setFullName(fullName);
+            admin.setEmailAddress(emailAddress);
+            admin.setPassword(password);
+            admin.setDob(LocalDate.parse(dob));
+            admin.setPhoneNo(phoneNo);
+
+            if (image != null && !image.isEmpty()) {
+                String originalFilename = image.getOriginalFilename();
+                String sanitizedFilename = fullName.trim().toLowerCase().replaceAll("[^a-zA-Z0-9]", "_");
+                String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+                String imageFileName = sanitizedFilename + "_" + System.currentTimeMillis() + extension;
+
+                Path uploadPath = Paths.get(UPLOAD_DIR);
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                Path filePath = uploadPath.resolve(imageFileName);
+                Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+                admin.setImagePath(imageFileName);
+            }
+
+            adminService.saveAdmin(admin);
+            session.setAttribute("loggedInUser", admin);
+
+            return "redirect:/admin/adminprofile";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "redirect:/admin/adminprofile?error=An error occurred while updating the profile.";
+        }
+    }
+*/
 
 
     // Show AdminEntity Profile
-    @GetMapping("/adminprofile")
+	
+	
+	@GetMapping("/adminprofile")
     public String showAdminProfilePage(HttpSession session, Model model) {
-        // Retrieve the logged-in admin from session
         AdminEntity loggedInAdmin = (AdminEntity) session.getAttribute("loggedInUser");
         if (loggedInAdmin == null) {
-            return "redirect:/"; // Redirect to login page if not logged in
+            return "redirect:/"; // redirect to login
         }
-
-        // Encode admin image from file path
         String base64Image = "";
         if (loggedInAdmin.getImagePath() != null) {
             try {
-                File imageFile = new File(loggedInAdmin.getImagePath());
-                if (imageFile.exists()) {
-                    byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
-                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
-                }
+                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
+                base64Image = Base64.getEncoder().encodeToString(imageBytes);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        model.addAttribute("base64Image", base64Image);
+        // Add admin object to model to access in JSP
+		model.addAttribute("base64Image", base64Image);
         model.addAttribute("admin", loggedInAdmin);
-        return "adminprofile"; // Points to adminprofile.jsp
+        return "adminprofile"; // JSP name (adminprofile.jsp)
     }
+
+
+    @GetMapping("/profile/image")
+    public void getAdminProfileImage(@RequestParam("email") String email, HttpServletResponse response) {
+        try {
+            Optional<AdminEntity> optionalAdmin = adminRepository.findByEmailAddress(email);
+            AdminEntity admin = optionalAdmin.orElse(null);
+
+            if (admin != null && admin.getImagePath() != null && !admin.getImagePath().isEmpty()) {
+                // Load image from the exact fixed path
+                File imageFile = Paths.get("C:/Users/Mohammed Salman/alumni-app/photograph", admin.getImagePath()).toFile();
+                System.out.println("Trying to load image: " + imageFile.getAbsolutePath());
+
+                if (imageFile.exists()) {
+                    String mimeType = Files.probeContentType(imageFile.toPath());
+                    response.setContentType(mimeType != null ? mimeType : "image/jpeg");
+                    Files.copy(imageFile.toPath(), response.getOutputStream());
+                    response.getOutputStream().flush();
+                    return;
+                } else {
+                    System.out.println("Image file not found at: " + imageFile.getAbsolutePath());
+                }
+            }
+
+            // Load default fallback image from classpath
+            InputStream defaultImage = getClass().getResourceAsStream("/static/images/defaultimag.png");
+            if (defaultImage != null) {
+                response.setContentType("image/png");
+                StreamUtils.copy(defaultImage, response.getOutputStream());
+                response.getOutputStream().flush();
+            } else {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Default image not found.");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            try {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Image loading failed.");
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+    }
+
+
+
+    @PostMapping("/register")
+    public String registerAdmin(@RequestParam("fullName") String fullName,
+                                @RequestParam("emailAddress") String emailAddress,
+                                @RequestParam("password") String password,
+                                @RequestParam("dob") String dob,
+                                @RequestParam("phoneNo") String phoneNo,
+                                @RequestParam("image") MultipartFile image,
+                                Model model) {
+        try {
+            if (adminService.emailExists(emailAddress)) {
+                model.addAttribute("error", "Email address already exists!");
+                return "register";
+            }
+
+            String imageFileName = null;
+
+            if (image != null && !image.isEmpty()) {
+                String originalFileName = image.getOriginalFilename();
+                System.out.println("Received image: " + originalFileName);
+
+                // Fixed upload directory
+                String uploadDir = "C:/Users/Mohammed Salman/alumni-app/photograph";
+                Path uploadPath = Paths.get(uploadDir);
+
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                    System.out.println("Created upload directory: " + uploadPath);
+                }
+
+                // Generate a unique file name
+                String sanitizedFullName = fullName.trim().toLowerCase().replaceAll("[^a-zA-Z0-9]", "_");
+                String extension = originalFileName != null && originalFileName.contains(".")
+                        ? originalFileName.substring(originalFileName.lastIndexOf("."))
+                        : ".png";
+                imageFileName = sanitizedFullName + "_" + System.currentTimeMillis() + extension;
+
+                // Save image file
+                Path filePath = uploadPath.resolve(imageFileName);
+                try (InputStream inputStream = image.getInputStream()) {
+                    Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+                }
+
+                System.out.println("Saved admin image to: " + filePath);
+            } else {
+                System.out.println("No image uploaded.");
+            }
+
+            // Save admin details with the image file name
+            adminService.registerAdmin(fullName, emailAddress, password, dob, phoneNo, imageFileName);
+
+            model.addAttribute("success", "Registration successful! Please login.");
+            return "adminlogin";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "An error occurred during registration. Please try again.");
+            return "register";
+        }
+    }
+
 
 
     
@@ -313,40 +491,6 @@ public class AdminController {
     }
 
  
-    // Register AdminEntity
-    @PostMapping("/register")
-    public String registerAdmin(@RequestParam("fullName") String fullName,
-                                @RequestParam("emailAddress") String emailAddress,
-                                @RequestParam("password") String password,
-                                @RequestParam("dob") String dob,
-                                @RequestParam("phoneNo") String phoneNo,
-                                @RequestParam("image") MultipartFile image,
-                                Model model) {
-        try {
-            if (adminService.emailExists(emailAddress)) {
-                model.addAttribute("error", "Email address already exists!");
-                return "register";
-            }
-
-            // Save image to photograph folder
-            String uploadDir = "photograph/";
-            String originalFilename = image.getOriginalFilename();
-            String imageFileName = System.currentTimeMillis() + "_" + originalFilename;
-            File savePath = new File(uploadDir + imageFileName);
-            savePath.getParentFile().mkdirs(); // Ensure directory exists
-            image.transferTo(savePath);
-
-            // Call service to save admin details with image path
-            adminService.registerAdmin(fullName, emailAddress, password, dob, phoneNo, imageFileName);
-
-            model.addAttribute("success", "Registration successful! Please login.");
-            return "adminlogin";
-        } catch (Exception e) {
-            e.printStackTrace();
-            model.addAttribute("error", "An error occurred during registration. Please try again.");
-            return "register";
-        }
-    }
 
     // Handle Logout 
     

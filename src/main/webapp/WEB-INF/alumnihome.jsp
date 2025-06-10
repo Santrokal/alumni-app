@@ -401,6 +401,7 @@ color:#0056b3;
 /* Wrapper: Animate Left to Right */
 .scrolling-story-wrapper {
     display: flex;
+    overflow:hidden;
     animation: scroll-left-to-right 20s linear infinite;
     padding: 10px;
 }
@@ -659,14 +660,14 @@ color:#0056b3;
                 if (storiesList != null && !storiesList.isEmpty()) { 
                     for (StoryEntity story : storiesList) { 
                         String imageUrl = story.getStoryImagePath() != null 
-                            ? request.getContextPath() + "/story_media/" + story.getStoryImagePath() 
-                            : request.getContextPath() + "/images/default_image.jpg";
+                            ? request.getContextPath() + "/story_folder/" + story.getStoryImagePath() 
+                            : request.getContextPath() + "/images/alumni_default_img.png";
             %>
             <!-- Story Card -->
             <div class="story-card">
                 <img src="<%= imageUrl %>" 
                      alt="Story Image" 
-                     onerror="this.src='<%= request.getContextPath() %>/images/default_image.jpg'">
+                     onerror="this.src='<%= request.getContextPath() %>/images/alumni_default_img.png'">
                 <div class="story-content">
                     <h3 class="story-title"><%= story.getTitle() != null ? story.getTitle() : "Untitled" %></h3>
                     <p class="story-text">

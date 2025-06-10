@@ -77,7 +77,7 @@ public class AlumniStoryController {
     @GetMapping("/story_media/{filename}")
     public ResponseEntity<Resource> serveStoryMedia(@PathVariable String filename) {
         try {
-            Path file = Paths.get("C:/Users/Mohammed Salman/alumni-app/story_folder/" + filename);
+            Path file = Paths.get("C:\\Users\\Mohammed Salman\\alumni-app\\src\\main\\webapp\\story_folder" + filename);
             Resource resource = new UrlResource(file.toUri());
             
             System.out.println("Serving story media: " + file.toString());

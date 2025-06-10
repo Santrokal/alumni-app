@@ -64,6 +64,7 @@ public class StoryService {
 		}
 
 		storyRepository.save(story);
+
 	}
 
 	private String saveFileToFolder(MultipartFile file, HttpServletRequest request) throws IOException {
@@ -92,7 +93,7 @@ public class StoryService {
 		file.transferTo(filePath.toFile());
 		System.out.println("Saved file to: " + filePath);
 
-		return uniqueFilename; // Return just the filename
+		return uniqueFilename; 
 	}
 
 }

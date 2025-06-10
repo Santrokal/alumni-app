@@ -297,16 +297,16 @@
                                          lowerFilename.endsWith(".webm");
                         if (isVideo) { %>
                             <video class="w-full max-w-sm h-64 object-cover" controls>
-                                <source src="<%= request.getContextPath() %>/media/<%= filename %>" type="video/mp4">
+                                <source src="<%= request.getContextPath() %>/news_folder/<%= filename %>" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         <% } else { %>
-                            <img class="w-full max-w-sm h-64 object-cover" src="<%= request.getContextPath() %>/media/<%= filename %>" alt="News Media">
+                            <img class="w-full max-w-sm h-64 object-cover" src="<%= request.getContextPath() %>/news_folder/<%= filename %>" alt="News Media">
                         <% } %>
                     <% } %>
                 </div>
             <% } else { %>
-                <img class="w-full h-96 object-cover" src="<%= request.getContextPath() %>/images/default-news.jpg" alt="Default Image">
+                <img class="w-full h-96 object-cover" src="<%= request.getContextPath() %>/images/news_default_image.jpg" alt="Default Image">
             <% } %>
             <div class="p-6">
                 <h1 class="text-4xl font-bold mb-4 text-gray-800" id="title"><%= news.getTitle() %></h1>
