@@ -58,4 +58,5 @@ public class BillPdfEntity {
 
     public byte[] getPdfData() { return pdfData; }
     public void setPdfData(byte[] pdfData) { this.pdfData = pdfData; }
+
 }

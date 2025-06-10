@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,6 +38,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.lang.String;
 import java.math.BigDecimal;
@@ -44,6 +46,7 @@ import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Controller
@@ -73,18 +76,24 @@ public class AdminAlumniUploadDataController {
             redirectAttributes.addFlashAttribute("message", "Please select a file to upload.");
             return "redirect:/admin/uploaddata";
         }
-        
 
         List<String> duplicatePhones = new ArrayList<>();
         List<String> successUploads = new ArrayList<>();
+        Set<String> phoneNumbersInFile = new HashSet<>();
+        String uploadDir = "C:/uploads/bills/"; // Adjust path for your environment
 
         try {
+            // Ensure upload directory exists
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
             Workbook workbook = new XSSFWorkbook(file.getInputStream());
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
 
             if (!rowIterator.hasNext()) {
                 redirectAttributes.addFlashAttribute("message", "The file is empty or has no header row.");
+                workbook.close();
                 return "redirect:/admin/uploaddata";
             }
 
@@ -94,75 +103,90 @@ public class AdminAlumniUploadDataController {
 
             if (columnMapping.isEmpty()) {
                 redirectAttributes.addFlashAttribute("message", "Invalid file format. Required headers: " + REQUIRED_HEADERS);
+                workbook.close();
                 return "redirect:/admin/uploaddata";
             }
 
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
                 String fullName = getCellValue(row, columnMapping.get("fullname"));
-                String phone_number = getCellValue(row, columnMapping.get("phone_number"));
-                String memberId = generateMemberId(fullName);
+                String phoneNumber = getCellValue(row, columnMapping.get("phone_number"));
 
-                // ✅ Check for duplicate email
-                if (membershipRepository.existsByPhoneNumber(phone_number)) {
-                    duplicatePhones.add(phone_number);
-                    continue; // Skip duplicate record
+                if (fullName.isEmpty() || phoneNumber.isEmpty()) {
+                    continue;
                 }
 
-                // ✅ Generate Payment ID BEFORE saving MembershipEntity
+                if (!phoneNumbersInFile.add(phoneNumber) || membershipRepository.existsByPhoneNumber(phoneNumber)) {
+                    duplicatePhones.add(phoneNumber);
+                    continue;
+                }
+
+                String memberId = generateMemberId(fullName);
                 String paymentId = UUID.randomUUID().toString().substring(0, 10);
 
+                // Save Membership Data
                 MembershipEntity membership = new MembershipEntity();
                 membership.setMember_id(memberId);
                 membership.setFullname(fullName);
-                membership.setPhoneNumber(phone_number);
-                membership.setPaymentId(paymentId); // ✅ Fix: Set Payment ID
+                membership.setPhoneNumber(phoneNumber);
+                membership.setPaymentId(paymentId);
                 membership.setCreatedAt(LocalDateTime.now());
-
-                // Save Membership Data
                 membershipRepository.save(membership);
-                successUploads.add(phone_number);
+                successUploads.add(phoneNumber);
 
-                // Generate PDF
-                byte[] pdfData = billingService.generateBillPdf(memberId, fullName, phone_number, paymentId);
+                // Generate and Save PDF
+                try {
+                    byte[] pdfData = billingService.generateBillPdf(memberId, fullName, phoneNumber, paymentId);
+                    String pdfFilePath = uploadDir + memberId + "_" + paymentId + ".pdf";
+                    try (FileOutputStream fos = new FileOutputStream(pdfFilePath)) {
+                        fos.write(pdfData);
+                    }
 
-                // Save PDF in `bill_pdf_entity`
-                BillPdfEntity billPdf = new BillPdfEntity();
-                billPdf.setId(UUID.randomUUID().toString());
-                billPdf.setMemberId(memberId);
-                billPdf.setFullName(fullName);
-                billPdf.setPhoneNumber(phone_number);
-                billPdf.setPaymentId(paymentId);
-                billPdf.setStatus("PAID");
-                billPdf.setDate(new Date());
-                billPdf.setPdfData(pdfData);
-
-                billPdfRepository.save(billPdf);
+                    BillPdfEntity billPdf = new BillPdfEntity();
+                    billPdf.setId(UUID.randomUUID().toString());
+                    billPdf.setMemberId(memberId);
+                    billPdf.setFullName(fullName);
+                    billPdf.setPhoneNumber(phoneNumber);
+                    billPdf.setPaymentId(paymentId);
+                    billPdf.setStatus("PAID");
+                    billPdf.setDate(new Date());
+                    billPdf.setPdfData(pdfData);
+                    billPdfRepository.save(billPdf);
+                } catch (Exception e) {
+                    // Log error, e.g., logger.error("Failed to generate/save PDF for member: " + memberId, e);
+                    continue;
+                }
             }
 
             workbook.close();
 
-            // ✅ Set messages **only once** after processing
+            // Set feedback message
+            StringBuilder message = new StringBuilder();
             if (!duplicatePhones.isEmpty()) {
-                redirectAttributes.addFlashAttribute("message", "Some duplicate Phone Number were skipped: " + duplicatePhones);
-            } else if (!successUploads.isEmpty()) {
-                redirectAttributes.addFlashAttribute("message", "Membership data uploaded and PDFs generated successfully for: " + successUploads);
-            } else {
-                redirectAttributes.addFlashAttribute("message", "No valid records found.");
+                message.append("Skipped ").append(duplicatePhones.size()).append(" duplicate phone numbers: ").append(duplicatePhones);
             }
+            if (!successUploads.isEmpty()) {
+                if (message.length() > 0) message.append("; ");
+                message.append("Successfully uploaded ").append(successUploads.size()).append(" records.");
+            }
+            if (message.length() == 0) {
+                message.append("No valid records found.");
+            }
+            redirectAttributes.addFlashAttribute("message", message.toString());
 
         } catch (IOException e) {
             redirectAttributes.addFlashAttribute("message", "Error processing file: " + e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("message", "Unexpected error: " + e.getMessage());
         }
 
         return "redirect:/admin/uploaddata";
     }
 
-
-
     private Map<String, Integer> validateAndMapHeaders(Row headerRow) {
         Map<String, Integer> columnMapping = new HashMap<>();
         for (Cell cell : headerRow) {
+            if (cell == null || cell.getCellType() == CellType.BLANK) continue;
             String header = cell.getStringCellValue().trim().toLowerCase();
             if (REQUIRED_HEADERS.contains(header)) {
                 columnMapping.put(header, cell.getColumnIndex());
@@ -175,38 +199,39 @@ public class AdminAlumniUploadDataController {
         if (columnIndex == null || row.getCell(columnIndex) == null) {
             return "";
         }
-        
+
         Cell cell = row.getCell(columnIndex);
-        
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().trim();
-                
-            case NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
-                } else {
-                    // ✅ Fix: Format numeric values correctly (especially for phone numbers)
-                    return BigDecimal.valueOf(cell.getNumericCellValue()).toPlainString();
-                }
-                
-            case BOOLEAN:
-                return Boolean.toString(cell.getBooleanCellValue());
-                
-            case FORMULA:
-                return cell.getCellFormula();
-                
-            case BLANK:
-            default:
-                return "";
+        try {
+            switch (cell.getCellType()) {
+                case STRING:
+                    return cell.getStringCellValue().trim();
+                case NUMERIC:
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                        return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
+                    } else {
+                        // Format numeric values (e.g., phone numbers) without scientific notation
+                        return BigDecimal.valueOf(cell.getNumericCellValue()).toPlainString();
+                    }
+                case BOOLEAN:
+                    return Boolean.toString(cell.getBooleanCellValue());
+                case FORMULA:
+                    return cell.getCellFormula();
+                case BLANK:
+                default:
+                    return "";
+            }
+        } catch (Exception e) {
+            return ""; // Handle invalid cell data gracefully
         }
     }
 
     private String generateMemberId(String fullName) {
+        if (fullName == null || fullName.trim().isEmpty()) {
+            return "MEM-" + UUID.randomUUID().toString().substring(0, 5);
+        }
         String namePart = fullName.replaceAll("\\s+", "").substring(0, Math.min(5, fullName.length())).toUpperCase();
         return namePart + "-" + UUID.randomUUID().toString().substring(0, 5);
     }
-
 
     // Display the file upload form
     @GetMapping("/admin/uploaddata")

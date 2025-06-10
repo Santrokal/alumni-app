@@ -303,49 +303,6 @@ public class AdminController {
     }
 
 
-    @GetMapping("/profile/image")
-    public void getAdminProfileImage(@RequestParam("email") String email, HttpServletResponse response) {
-        try {
-            Optional<AdminEntity> optionalAdmin = adminRepository.findByEmailAddress(email);
-            AdminEntity admin = optionalAdmin.orElse(null);
-
-            if (admin != null && admin.getImagePath() != null && !admin.getImagePath().isEmpty()) {
-                // Load image from the exact fixed path
-                File imageFile = Paths.get("C:/Users/Mohammed Salman/alumni-app/photograph", admin.getImagePath()).toFile();
-                System.out.println("Trying to load image: " + imageFile.getAbsolutePath());
-
-                if (imageFile.exists()) {
-                    String mimeType = Files.probeContentType(imageFile.toPath());
-                    response.setContentType(mimeType != null ? mimeType : "image/jpeg");
-                    Files.copy(imageFile.toPath(), response.getOutputStream());
-                    response.getOutputStream().flush();
-                    return;
-                } else {
-                    System.out.println("Image file not found at: " + imageFile.getAbsolutePath());
-                }
-            }
-
-            // Load default fallback image from classpath
-            InputStream defaultImage = getClass().getResourceAsStream("/static/images/defaultimag.png");
-            if (defaultImage != null) {
-                response.setContentType("image/png");
-                StreamUtils.copy(defaultImage, response.getOutputStream());
-                response.getOutputStream().flush();
-            } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Default image not found.");
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            try {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Image loading failed.");
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-        }
-    }
-
-
 
     @PostMapping("/register")
     public String registerAdmin(@RequestParam("fullName") String fullName,
