@@ -247,7 +247,7 @@
         <!-- News Section -->
 <h1 class="text-center my-4" style="color: #333;">Add News</h1>
 <div class="container-1">
-    <form id="newsForm" onsubmit="submitForm(event)" enctype="multipart/form-data">
+<form id="newsForm" enctype="multipart/form-data" onsubmit="submitForm(event)">
         <div class="form-group">
             <label for="title"><span style="color: red;">*</span>Title:</label>
             <input type="text" id="title" name="title" class="form-control" required>
@@ -287,7 +287,6 @@
 <script>
 function submitForm(event) {
     event.preventDefault();
-
     var formData = new FormData(document.getElementById("newsForm"));
     var files = document.querySelector('input[name="mediaFiles"]').files;
     
@@ -302,7 +301,7 @@ function submitForm(event) {
     })
     .then(response => {
         if (!response.ok) {
-            return response.json().then(err => { throw err; });
+            return response.text().then(text => { throw new Error(text); });
         }
         return response.json();
     })
@@ -312,10 +311,11 @@ function submitForm(event) {
     })
     .catch(error => {
         console.error("Error:", error);
-        alert("Error: " + (error.error || "An unexpected error occurred."));
+        alert("Error: " + error.message);
     });
 }
 </script>
+
 
     <!-- Footer Section -->
 	<footer class="bg-light py-5">

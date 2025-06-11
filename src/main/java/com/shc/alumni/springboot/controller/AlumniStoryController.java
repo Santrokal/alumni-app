@@ -1,11 +1,15 @@
 package com.shc.alumni.springboot.controller;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.shc.alumni.springboot.entity.StoryComment;
@@ -74,39 +79,47 @@ public class AlumniStoryController {
         return "alumnistories";
     }
     
-    @GetMapping("/story_media/{filename}")
+    @GetMapping("/story_folder/{filename}")
     public ResponseEntity<Resource> serveStoryMedia(@PathVariable String filename) {
         try {
-            Path file = Paths.get("C:\\Users\\Mohammed Salman\\alumni-app\\src\\main\\webapp\\story_folder" + filename);
-            Resource resource = new UrlResource(file.toUri());
-            
-            System.out.println("Serving story media: " + file.toString());
-            
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = Files.probeContentType(file);
-                if (contentType == null) {
-                    if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
-                        contentType = "image/jpeg";
-                    } else if (filename.toLowerCase().endsWith(".png")) {
-                        contentType = "image/png";
-                    } else {
-                        contentType = "application/octet-stream";
-                    }
-                }
-                System.out.println("Content-Type: " + contentType);
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .body(resource);
-            } else {
-                System.out.println("File not found or unreadable: " + filename);
+            // Get classpath root
+            String classpathRoot = this.getClass().getClassLoader().getResource("").getPath();
+
+            // Decode path
+            String decodedPath = URLDecoder.decode(classpathRoot, "UTF-8");
+
+            // Windows fix: Remove leading slash if present (e.g., "/C:/" becomes "C:/")
+            if (decodedPath.startsWith("/") && decodedPath.contains(":")) {
+                decodedPath = decodedPath.substring(1);
+            }
+
+            // Final path to file
+            Path filePath = Paths.get(decodedPath, "story_folder", filename);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            System.out.println("Serving from: " + filePath);
+
+            if (!resource.exists() || !resource.isReadable()) {
                 return ResponseEntity.notFound().build();
             }
+
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+
         } catch (Exception e) {
-            System.out.println("Error serving story media: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
+
 
     private static <T> java.util.function.Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
         java.util.Map<Object, Boolean> seen = new java.util.concurrent.ConcurrentHashMap<>();
@@ -141,7 +154,8 @@ public class AlumniStoryController {
     }
 
     @PostMapping("/addstories")
-    public ResponseEntity<Object> addStory(
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> addStory(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
             @RequestParam(value = "linkedinProfile", required = false) String linkedinProfile,
@@ -150,15 +164,16 @@ public class AlumniStoryController {
             @RequestParam(value = "organization", required = false) String organization,
             @RequestParam(required = false) MultipartFile storyImage,
             HttpServletRequest request) {
+
+        Map<String, String> response = new HashMap<>();
+
         try {
-            // Now includes request parameter to support dynamic upload path
             storyService.saveStory(title, content, linkedinProfile, consentToPublish, department, organization, storyImage, request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("{\"message\": \"Story added successfully!\"}");
+            response.put("message", "Story added successfully!");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\": \"Error saving story: " + e.getMessage() + "\"}");
+            response.put("error", "Error saving story: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

@@ -157,7 +157,7 @@
     <!-- Profile Picture -->
     <div class="text-center">
         <img src="${image}" alt="Profile Image" style="width: 150px; height: 150px; border-radius: 50%;" 
-     onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/default-profile.png';" />
+     onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/defaultimag.png';" />
     </div>
 
     <!-- Personal Information -->

@@ -461,6 +461,7 @@
         <div class="d-flex align-items-center ms-4 mb-4">
             <div class="position-relative">
                 <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image" class="img-fluid" 
+                onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/defaultimag.png';"
                      style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
                 <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
             </div>

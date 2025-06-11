@@ -240,16 +240,16 @@ color:#0056b3;
     padding-bottom: 10px;
     white-space: nowrap;
     scroll-behavior: smooth;
-    animation: scrollAnimation 10s linear infinite;
+    animation: scrollAnimation 20s linear infinite;
 }
 
 /* Smooth Infinite Scroll Animation */
 @keyframes scrollAnimation {
     0% {
-        transform: translateX(0);
+        transform: translateX(80%);
     }
     100% {
-        transform: translateX(-50%);
+        transform: translateX(-70%);
     }
 }
 

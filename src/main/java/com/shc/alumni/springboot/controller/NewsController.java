@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -26,28 +28,31 @@ public class NewsController {
 
     @Autowired
     private NewsService newsService;
-    @Autowired
-    private ServletContext servletContext;
-
-
+    
+    
     @PostMapping("/addnews")
-    public ResponseEntity<Object> addNews(
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> addNews(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
             @RequestParam("category") String category,
             @RequestParam(value = "mediaFiles", required = false) MultipartFile[] mediaFiles,
             HttpServletRequest request) {
 
+        Map<String, String> response = new HashMap<>();
+
         try {
             newsService.saveNews(title, content, category, mediaFiles, request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body("{\"message\": \"News added successfully!\"}");
+            response.put("message", "News added successfully!");
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("{\"error\": \"Error saving news: " + e.getMessage() + "\"}");
+            response.put("error", "Error saving news: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

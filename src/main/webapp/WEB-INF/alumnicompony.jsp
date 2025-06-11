@@ -395,8 +395,8 @@
             <label for="image">Upload Company Logo:</label><br>
             <input type="file" id="image" name="image" accept="image/*"><br><br>
 
-            <label for="fileUpload">Job Posture/Job Details PDF/etc..:</label><br>
-            <input type="file" id="fileUpload" name="fileUpload" accept=".docx, .pdf, .xlsx, .txt, .jpeg ,.jpg, .png"><br><br>
+            <label for="fileUpload"><span style="color: red;">*</span>Job Posture/Job Details PDF/etc..:</label><br>
+            <input type="file" id="fileUpload" name="fileUpload" accept=".docx, .pdf, .xlsx, .txt, .jpeg ,.jpg, .png" required><br><br>
 
     <button class="animated-button">Submit</button>	
 

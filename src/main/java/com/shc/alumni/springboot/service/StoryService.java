@@ -2,6 +2,7 @@ package com.shc.alumni.springboot.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,32 +69,39 @@ public class StoryService {
 	}
 
 	private String saveFileToFolder(MultipartFile file, HttpServletRequest request) throws IOException {
-		// Get dynamic webapp root path
-		ServletContext servletContext = request.getServletContext();
-		String appRoot = servletContext.getRealPath("/");
-		if (appRoot == null) {
-			appRoot = System.getProperty("user.dir") + "/webapp/";
-		}
+	    // Locate /WEB-INF/classes/
+	    String classpathRoot = this.getClass().getClassLoader().getResource("").getPath();
+	    String decodedPath = URLDecoder.decode(classpathRoot, "UTF-8");
 
-		// Define folder name under app root
-		String folderName = "story_folder";
-		Path folderPath = Paths.get(appRoot, folderName);
+	    // ✅ Windows fix: remove leading slash if path starts with "/C:/..."
+	    if (decodedPath.startsWith("/") && decodedPath.contains(":")) {
+	        decodedPath = decodedPath.substring(1);
+	    }
 
-		// Create folder if it doesn't exist
-		if (!Files.exists(folderPath)) {
-			Files.createDirectories(folderPath);
-			System.out.println("Created directory: " + folderPath);
-		}
+	    // Define target folder path inside /WEB-INF/classes/story_folder
+	    Path folderPath = Paths.get(decodedPath, "story_folder");
 
-		// Generate unique filename and save the file
-		String originalFileName = file.getOriginalFilename();
-		String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
-		Path filePath = folderPath.resolve(uniqueFilename);
+	    // Create directory if not exists
+	    if (!Files.exists(folderPath)) {
+	        Files.createDirectories(folderPath);
+	        System.out.println("Created directory: " + folderPath);
+	    }
 
-		file.transferTo(filePath.toFile());
-		System.out.println("Saved file to: " + filePath);
+	    // Generate unique filename
+	    String originalFileName = file.getOriginalFilename();
+	    String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
 
-		return uniqueFilename; 
+	    // Final file path
+	    Path filePath = folderPath.resolve(uniqueFilename);
+
+	    // Save the file
+	    file.transferTo(filePath.toFile());
+	    System.out.println("Saved file to: " + filePath);
+
+	    return uniqueFilename;
 	}
+
+
+
 
 }

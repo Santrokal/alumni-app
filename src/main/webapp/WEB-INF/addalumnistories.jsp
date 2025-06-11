@@ -306,34 +306,41 @@
     </div>
 
     <script>
-        async function submitForm(event) {
-            event.preventDefault(); // Prevent default form submission
+    async function submitForm(event) {
+        event.preventDefault();
 
-            const form = document.getElementById("storiesForm");
-            const formData = new FormData(form);
+        const form = document.getElementById("storiesForm");
+        const formData = new FormData(form);
 
-            // Automatically set createdAt to current date/time (optional, can be handled backend)
-            formData.append("createdAt", new Date().toISOString());
+        try {
+            const response = await fetch('<%= request.getContextPath() %>/addstories', {
+                method: 'POST',
+                body: formData
+            });
 
-            try {
-                const response = await fetch('<%= request.getContextPath() %>/addstories', {
-                    method: 'POST',
-                    body: formData
-                });
+            const contentType = response.headers.get("content-type");
+            let data;
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || "Failed to submit the story.");
-                }
-
-                const data = await response.json();
-                alert(data.message || "Story added successfully!");
-                window.location.href = "<%= request.getContextPath() %>/stories";
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Error: " + error.message);
+            if (contentType && contentType.includes("application/json")) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                throw new Error("Server responded with HTML:\n" + text.substring(0, 200));
             }
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to submit the story.");
+            }
+
+            alert(data.message || "Story added successfully!");
+            window.location.href = "<%= request.getContextPath() %>/stories";
+
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error: " + error.message);
         }
+    }
+
     </script>
 
 

@@ -454,6 +454,7 @@
         <div class="d-flex align-items-center ms-4 mb-4">
             <div class="position-relative">
                 <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image" class="img-fluid" 
+                onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/defaultimag.png';"
                      style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
                 <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
             </div>
@@ -540,7 +541,8 @@
             <!-- Profile Dropdown -->
             <div class="nav-item dropdown">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                    <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image" class="rounded-circle me-lg-2" 
+                    <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image" class="rounded-circle me-lg-2"
+                    onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/defaultimag.png';" 
                          style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                     <span class="d-none d-lg-inline-flex">${admin.fullName}</span>
                 </a>

@@ -1,6 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true"%>
 <%@ page import="java.util.List" %>
+
+<%@ page import="java.net.URLDecoder" %>
+<%@ page import="java.io.File" %>
+
 <%@ page import="com.shc.alumni.springboot.entity.StoryEntity" %>
 
 <!DOCTYPE html>
@@ -303,14 +307,18 @@
         %>
             <div class="row">
                 <% 
+
                     for (int i = 0; i < storiesList.size(); i++) { 
                         StoryEntity story = storiesList.get(i); 
-                        String imageUrl = story.getStoryImagePath() != null ? request.getContextPath() + "/story_folder/" + story.getStoryImagePath() : request.getContextPath() + "/images/default_image.jpg";
+                        String imageUrl = request.getContextPath() + "/story_folder/" + story.getStoryImagePath();
+                        //String imageUrl = story.getStoryImagePath() != null ? story.getStoryImagePath()+ reponsePath  +"/story_folder/" + story.getStoryImagePath() : request.getContextPath() + "/images/default_image.jpg";
                         System.out.println("Image URL for story " + story.getId() + ": " + imageUrl);
                 %>
+                
                     <div class="col-lg-3 col-md-6 col-sm-12 mb-4 d-flex align-items-stretch">
                         <div class="card-container">
                             <img class="card-img" src="<%= imageUrl %>" alt="Story Image" onerror="this.src='<%= request.getContextPath() %>/images/alumni_default_img.png'">
+                            
                             <div class="card-content">
                                 <h5 class="card-title"><%= story.getTitle() != null ? story.getTitle() : "Untitled" %></h5>
                                 <p class="card-description">

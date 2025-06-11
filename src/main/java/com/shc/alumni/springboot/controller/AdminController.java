@@ -304,7 +304,7 @@ public class AdminController {
 
 
 
-    @PostMapping("/register")
+	@PostMapping("/register")
     public String registerAdmin(@RequestParam("fullName") String fullName,
                                 @RequestParam("emailAddress") String emailAddress,
                                 @RequestParam("password") String password,
@@ -363,7 +363,6 @@ public class AdminController {
             return "register";
         }
     }
-
 
 
     

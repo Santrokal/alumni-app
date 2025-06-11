@@ -20,7 +20,8 @@ public class CorsConfig implements WebMvcConfigurer {
                     "http://192.168.10.81:8080",// Backend itself (for testing)
                     "https://test.payu.in",       // PayU test environment
                     "https://apitest.payu.in",    // PayU API test
-                    "https://*.ngrok-free.app"    // Ngrok wildcard (not used in this case but kept)
+                    "https://*.ngrok-free.app" ,
+                    "https://www.leapshc.org:8443/Alumni/" 
                 )
                 .allowedMethods("GET", "POST", "OPTIONS")
                 .allowedHeaders("*")
