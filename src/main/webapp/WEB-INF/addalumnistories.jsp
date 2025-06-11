@@ -312,6 +312,11 @@
         const form = document.getElementById("storiesForm");
         const formData = new FormData(form);
 
+        // Log form data for debugging
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+
         try {
             const response = await fetch('<%= request.getContextPath() %>/addstories', {
                 method: 'POST',
@@ -325,7 +330,8 @@
                 data = await response.json();
             } else {
                 const text = await response.text();
-                throw new Error("Server responded with HTML:\n" + text.substring(0, 200));
+                console.log("Non-JSON response:", text);
+                throw new Error("Server responded with non-JSON content");
             }
 
             if (!response.ok) {

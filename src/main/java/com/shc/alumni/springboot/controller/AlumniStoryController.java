@@ -80,26 +80,17 @@ public class AlumniStoryController {
     }
     
     @GetMapping("/story_folder/{filename}")
-    public ResponseEntity<Resource> serveStoryMedia(@PathVariable String filename) {
+    public ResponseEntity<Resource> serveStoryMedia(@PathVariable String filename, HttpServletRequest request) {
         try {
-            // Get classpath root
-            String classpathRoot = this.getClass().getClassLoader().getResource("").getPath();
-
-            // Decode path
-            String decodedPath = URLDecoder.decode(classpathRoot, "UTF-8");
-
-            // Windows fix: Remove leading slash if present (e.g., "/C:/" becomes "C:/")
-            if (decodedPath.startsWith("/") && decodedPath.contains(":")) {
-                decodedPath = decodedPath.substring(1);
-            }
-
-            // Final path to file
-            Path filePath = Paths.get(decodedPath, "story_folder", filename);
+            // Get the real path to /WEB-INF/story_folder
+            String basePath = request.getServletContext().getRealPath("/WEB-INF/story_folder");
+            Path filePath = Paths.get(basePath, filename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
 
-            System.out.println("Serving from: " + filePath);
+            System.out.println("Serving file from: " + filePath);
 
             if (!resource.exists() || !resource.isReadable()) {
+                System.out.println("File not found or unreadable: " + filePath);
                 return ResponseEntity.notFound().build();
             }
 
@@ -113,6 +104,7 @@ public class AlumniStoryController {
                     .body(resource);
 
         } catch (Exception e) {
+            System.err.println("Error serving file: " + filename + ", " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -162,21 +154,24 @@ public class AlumniStoryController {
             @RequestParam(value = "consentToPublish", defaultValue = "false") boolean consentToPublish,
             @RequestParam("department") String department,
             @RequestParam(value = "organization", required = false) String organization,
-            @RequestParam(required = false) MultipartFile storyImage,
+            @RequestParam(value = "storyImage", required = false) MultipartFile storyImage,
             HttpServletRequest request) {
 
         Map<String, String> response = new HashMap<>();
+        System.out.println("Received: title=" + title + ", content=" + content + ", linkedinProfile=" + linkedinProfile +
+                ", consentToPublish=" + consentToPublish + ", department=" + department + ", organization=" + organization +
+                ", storyImage=" + (storyImage != null ? storyImage.getOriginalFilename() : "null"));
 
         try {
             storyService.saveStory(title, content, linkedinProfile, consentToPublish, department, organization, storyImage, request);
             response.put("message", "Story added successfully!");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             response.put("error", "Error saving story: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
 
     @GetMapping("/addstories")
     public String showAddStoryPage() {

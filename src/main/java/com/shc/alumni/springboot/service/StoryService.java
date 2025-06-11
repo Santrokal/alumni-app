@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,61 +47,59 @@ public class StoryService {
 		}
 	}
 
-	public void saveStory(String title, String content, String linkedinProfile, boolean consentToPublish,
-			String department, String organization, MultipartFile storyImage, HttpServletRequest request)
-			throws IOException {
 
-		StoryEntity story = new StoryEntity();
-		story.setTitle(title);
-		story.setContent(content);
-		story.setLinkedinProfile(linkedinProfile);
-		story.setConsentToPublish(consentToPublish);
-		story.setDepartment(department);
-		story.setOrganization(organization);
-		story.setCreatedAt(LocalDateTime.now());
 
-		if (storyImage != null && !storyImage.isEmpty()) {
-			String filename = saveFileToFolder(storyImage, request);
-			story.setStoryImagePath(filename);
-		}
+	@Transactional
+    public void saveStory(String title, String content, String linkedinProfile, boolean consentToPublish,
+            String department, String organization, MultipartFile storyImage, HttpServletRequest request)
+            throws IOException {
 
-		storyRepository.save(story);
+        StoryEntity story = new StoryEntity();
+        story.setTitle(title);
+        story.setContent(content);
+        story.setLinkedinProfile(linkedinProfile);
+        story.setConsentToPublish(consentToPublish);
+        story.setDepartment(department);
+        story.setOrganization(organization);
+        story.setCreatedAt(LocalDateTime.now());
 
-	}
+        if (storyImage != null && !storyImage.isEmpty()) {
+            String filename = saveFileToFolder(storyImage, request);
+            story.setStoryImagePath(filename);
+        } else {
+            System.out.println("No story image provided");
+            story.setStoryImagePath(null);
+        }
 
-	private String saveFileToFolder(MultipartFile file, HttpServletRequest request) throws IOException {
-	    // Locate /WEB-INF/classes/
-	    String classpathRoot = this.getClass().getClassLoader().getResource("").getPath();
-	    String decodedPath = URLDecoder.decode(classpathRoot, "UTF-8");
+        try {
+            storyRepository.save(story);
+        } catch (Exception e) {
+            throw new IOException("Failed to save story to database: " + e.getMessage(), e);
+        }
+    }
 
-	    // ✅ Windows fix: remove leading slash if path starts with "/C:/..."
-	    if (decodedPath.startsWith("/") && decodedPath.contains(":")) {
-	        decodedPath = decodedPath.substring(1);
-	    }
+    private String saveFileToFolder(MultipartFile file, HttpServletRequest request) throws IOException {
+        String basePath = request.getServletContext().getRealPath("/WEB-INF/story_folder");
+        Path folderPath = Paths.get(basePath);
 
-	    // Define target folder path inside /WEB-INF/classes/story_folder
-	    Path folderPath = Paths.get(decodedPath, "story_folder");
+        try {
+            if (!Files.exists(folderPath)) {
+                Files.createDirectories(folderPath);
+                System.out.println("Created directory: " + folderPath);
+            }
 
-	    // Create directory if not exists
-	    if (!Files.exists(folderPath)) {
-	        Files.createDirectories(folderPath);
-	        System.out.println("Created directory: " + folderPath);
-	    }
+            String originalFileName = file.getOriginalFilename();
+            String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
+            Path filePath = folderPath.resolve(uniqueFilename);
 
-	    // Generate unique filename
-	    String originalFileName = file.getOriginalFilename();
-	    String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
-
-	    // Final file path
-	    Path filePath = folderPath.resolve(uniqueFilename);
-
-	    // Save the file
-	    file.transferTo(filePath.toFile());
-	    System.out.println("Saved file to: " + filePath);
-
-	    return uniqueFilename;
-	}
-
+            file.transferTo(filePath.toFile());
+            System.out.println("Saved file to: " + filePath);
+            return uniqueFilename;
+        } catch (IOException e) {
+            System.err.println("Failed to save file: " + e.getMessage());
+            throw new IOException("Error saving file to " + folderPath + ": " + e.getMessage(), e);
+        }
+    }
 
 
 
