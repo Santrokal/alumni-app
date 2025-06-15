@@ -56,8 +56,8 @@ public class MembershipService {
         params.put("firstname", fullName);
         params.put("email", "test@example.com");
         params.put("phone", phoneNumber);
-        params.put("surl", "https://4692-2409-40f4-3114-87e4-859c-2bee-3f98-6e4.ngrok-free.app/paymentSuccess");
-        params.put("furl", "https://4692-2409-40f4-3114-87e4-859c-2bee-3f98-6e4.ngrok-free.app/paymentFailure");
+        params.put("surl", "https://d7ca-2401-4900-1f2c-6615-74b5-998-9e8d-bb.ngrok-free.app/paymentSuccess");
+        params.put("furl", "https://d7ca-2401-4900-1f2c-6615-74b5-998-9e8d-bb.ngrok-free.app/paymentFailure");
 
         String hash = generatePayUHash(merchantKey, transactionId, String.valueOf(amount), "Membership Payment",
                                        fullName, "test@example.com");

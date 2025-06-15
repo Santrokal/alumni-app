@@ -7,6 +7,7 @@ import com.shc.alumni.springboot.repository.MembershipRepository;
 import com.shc.alumni.springboot.service.BillingService;
 import com.shc.alumni.springboot.service.MembershipService;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -51,6 +52,9 @@ public class MembershipController {
 
     @Autowired
     private BillPdfRepository billPdfRepository;
+    
+    @Autowired
+    private ServletContext servletContext;
 
     /**
      * Display the membership page.
@@ -163,16 +167,17 @@ public class MembershipController {
                 return "paymentfailure";
             }
 
-            String directoryPath = "membership";
+            String directoryPath = servletContext.getRealPath("/WEB-INF/membership_data/");
             Path path = Paths.get(directoryPath);
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
             }
-            String filePath = directoryPath + "/" + memberId + "_bill.pdf";
+            String filePath = directoryPath + File.separator + memberId + "_bill.pdf";
             try (FileOutputStream fos = new FileOutputStream(filePath)) {
                 fos.write(billPdf);
                 logger.info("Bill PDF saved to disk: {}", filePath);
             }
+           
 
             BillPdfEntity billPdfEntity = new BillPdfEntity();
             billPdfEntity.setId(UUID.randomUUID().toString());

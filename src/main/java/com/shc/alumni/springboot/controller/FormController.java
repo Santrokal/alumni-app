@@ -6,8 +6,11 @@ import com.shc.alumni.springboot.service.FormService;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,8 @@ public class FormController {
 
     @Autowired
     private FormService formService;
+    @Autowired
+    private ServletContext servletContext;
 
     // Search fields endpoint - Changed to GET for better REST practice
     @GetMapping(value = "/search", produces = MediaType.TEXT_HTML_VALUE)
@@ -56,14 +61,33 @@ public class FormController {
         }
         
         String base64Image = "";
-        if (loggedInAdmin.getImagePath() != null) {
-            try {
-                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            String imagePathInDb = loggedInAdmin.getImagePath();
+
+            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+                // Strip any folder prefix like "photograph/"
+                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+                // Get path to /WEB-INF/adminphotograph/
+                String appRoot = servletContext.getRealPath("/");
+                if (appRoot == null) {
+                    appRoot = System.getProperty("user.dir") + "/webapp/";
+                }
+
+                // Final image path
+                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+                if (Files.exists(imagePath)) {
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                } else {
+                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
 		
         // Add admin details to the model
         model.addAttribute("base64Image", base64Image);

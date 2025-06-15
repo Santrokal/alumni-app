@@ -19,10 +19,13 @@ import com.shc.alumni.springboot.repository.ContactRepository;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 
@@ -33,6 +36,8 @@ public class AdminContactController {
     private ContactRepository contactRepository;
 	@Autowired
     private JavaMailSender javaMailSender;
+	@Autowired
+	private ServletContext servletContext;
 	
 	@GetMapping("/admin/messages")
 	public String showMessages(Model model, HttpSession session) {
@@ -44,18 +49,34 @@ public class AdminContactController {
 	    }
 
 	    // Encode admin image from file path
-	    String base64Image = "";
-	    if (loggedInAdmin.getImagePath() != null) {
-	        File imageFile = new File(loggedInAdmin.getImagePath());
-	        if (imageFile.exists()) {
-	            try {
-	                byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
-	                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-	            } catch (IOException e) {
-	                e.printStackTrace(); // Log or handle the exception
-	            }
-	        }
-	    }
+        String base64Image = "";
+        try {
+            String imagePathInDb = loggedInAdmin.getImagePath();
+
+            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+                // Strip any folder prefix like "photograph/"
+                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+                // Get path to /WEB-INF/adminphotograph/
+                String appRoot = servletContext.getRealPath("/");
+                if (appRoot == null) {
+                    appRoot = System.getProperty("user.dir") + "/webapp/";
+                }
+
+                // Final image path
+                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+                if (Files.exists(imagePath)) {
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                } else {
+                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
 	    // Add admin details to the model
 	    model.addAttribute("base64Image", base64Image);

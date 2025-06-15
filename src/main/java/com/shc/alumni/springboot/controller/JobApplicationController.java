@@ -25,6 +25,7 @@ import com.shc.alumni.springboot.repository.CompanyRepository;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import javax.servlet.http.HttpServletRequest;
 
 @Controller
 public class JobApplicationController {
@@ -39,7 +40,7 @@ public class JobApplicationController {
     private JavaMailSender mailSender;
 
     // Path to store uploaded files
-    private static final String UPLOAD_DIR = "uploads/";
+   // private static final String UPLOAD_DIR = "uploads/";
     
     @GetMapping("/alumniapplytojob")
     public String showApplicationForm(@RequestParam("companyId") Long companyId, Model model) {
@@ -55,14 +56,27 @@ public class JobApplicationController {
             @RequestParam("phonenumber") String phonenumber,
             @RequestParam("emailaddress") String emailaddress,
             @RequestParam("resume") MultipartFile resume,
+            HttpServletRequest request,
             Model model) {
 
         try {
+            // Set the folder name for storing resumes
+            String uploadFolder = "Job_Application";
+
+            // Get real path for the upload directory inside the project
+            String uploadDir = request.getServletContext().getRealPath("/WEB-INF/" + uploadFolder + "/");
+
+            // Create the directory if it doesn't exist
+            Path folderPath = Paths.get(uploadDir);
+            if (!Files.exists(folderPath)) {
+                Files.createDirectories(folderPath);
+                System.out.println("Created upload directory: " + folderPath);
+            }
+
             // Save the uploaded file
             String fileName = System.currentTimeMillis() + "_" + resume.getOriginalFilename();
-            Path uploadPath = Paths.get(UPLOAD_DIR + fileName);
-            Files.createDirectories(uploadPath.getParent());
-            Files.write(uploadPath, resume.getBytes());
+            Path filePath = folderPath.resolve(fileName);
+            Files.write(filePath, resume.getBytes());
 
             // Create and save application data
             AlumniJobApplications application = new AlumniJobApplications();
@@ -75,14 +89,14 @@ public class JobApplicationController {
             if (companyOptional.isPresent()) {
                 String companyEmail = companyOptional.get().getCompanyemailid();
                 application.setSelectcompany(companyOptional.get().getPosition());
-                
+
                 // Save the file path
-                application.setFilePath(uploadPath.toString());
+                application.setFilePath(filePath.toString());
                 jobApplicationsRepository.save(application);
 
                 // Send email to both the company and admin email
-                sendJobApplicationEmail(companyEmail, fullname, emailaddress, phonenumber, uploadPath);
-                sendJobApplicationEmail("msalman90826@gmail.com", fullname, emailaddress, phonenumber, uploadPath);
+                sendJobApplicationEmail(companyEmail, fullname, emailaddress, phonenumber, filePath);
+                sendJobApplicationEmail("msalman90826@gmail.com", fullname, emailaddress, phonenumber, filePath);
 
                 model.addAttribute("successMessage", "Your application has been submitted successfully!");
                 return "success";
@@ -97,6 +111,7 @@ public class JobApplicationController {
             return "error";
         }
     }
+
     
     // Success page
     @GetMapping("/jobsuccess")

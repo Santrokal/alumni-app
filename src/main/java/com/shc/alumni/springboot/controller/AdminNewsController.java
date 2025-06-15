@@ -58,6 +58,8 @@ public class AdminNewsController {
 	ContactRepository contactRepository;
 	@Autowired
 	EmailService emailService;
+	@Autowired
+	private ServletContext servletContext;
 	
 	
 	 @GetMapping("/admin/managenews")
@@ -79,15 +81,34 @@ public class AdminNewsController {
                 return "redirect:/";
             }
 	        
-	        String base64Image = "";
-	        if (loggedInAdmin.getImagePath() != null) {
-	            try {
-	                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-	                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-	            } catch (IOException e) {
-	                e.printStackTrace();
-	            }
-	        }
+            String base64Image = "";
+            try {
+                String imagePathInDb = loggedInAdmin.getImagePath();
+
+                if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+                    // Strip any folder prefix like "photograph/"
+                    String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+                    // Get path to /WEB-INF/adminphotograph/
+                    String appRoot = servletContext.getRealPath("/");
+                    if (appRoot == null) {
+                        appRoot = System.getProperty("user.dir") + "/webapp/";
+                    }
+
+                    // Final image path
+                    Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+                    if (Files.exists(imagePath)) {
+                        byte[] imageBytes = Files.readAllBytes(imagePath);
+                        base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                    } else {
+                        System.out.println("⚠ Image not found at: " + imagePath.toString());
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
 			
 	        // Add admin details to the model
 	        model.addAttribute("base64Image", base64Image);
@@ -149,8 +170,39 @@ public class AdminNewsController {
 	        if (loggedInAdmin == null) {
 	            return "redirect:/"; // Ensure it redirects to the correct login page
 	        }
+	        
+	        String base64Image = "";
+	        try {
+	            String imagePathInDb = loggedInAdmin.getImagePath();
+
+	            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+	                // Strip any folder prefix like "photograph/"
+	                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+	                // Get path to /WEB-INF/adminphotograph/
+	                String appRoot = servletContext.getRealPath("/");
+	                if (appRoot == null) {
+	                    appRoot = System.getProperty("user.dir") + "/webapp/";
+	                }
+
+	                // Final image path
+	                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+	                if (Files.exists(imagePath)) {
+	                    byte[] imageBytes = Files.readAllBytes(imagePath);
+	                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+	                } else {
+	                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+	                }
+	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+
+	        
 			
 	        // Add admin details to the model
+	        model.addAttribute("base64Image",base64Image);
 	        model.addAttribute("admin", loggedInAdmin);
 	        return "addnewsadmini"; // Corresponds to addnews.html or addnews.jsp
 	    }
@@ -191,14 +243,33 @@ public class AdminNewsController {
 
 	        // Encode admin image from file path
 	        String base64Image = "";
-	        if (loggedInAdmin.getImagePath() != null) {
-	            try {
-	                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-	                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-	            } catch (IOException e) {
-	                e.printStackTrace();
+	        try {
+	            String imagePathInDb = loggedInAdmin.getImagePath();
+
+	            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+	                // Strip any folder prefix like "photograph/"
+	                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+	                // Get path to /WEB-INF/adminphotograph/
+	                String appRoot = servletContext.getRealPath("/");
+	                if (appRoot == null) {
+	                    appRoot = System.getProperty("user.dir") + "/webapp/";
+	                }
+
+	                // Final image path
+	                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+	                if (Files.exists(imagePath)) {
+	                    byte[] imageBytes = Files.readAllBytes(imagePath);
+	                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+	                } else {
+	                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+	                }
 	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
 	        }
+
 			
 	        model.addAttribute("base64Image", base64Image);
 	     model.addAttribute("storiesList", storiesList);
@@ -246,14 +317,33 @@ public class AdminNewsController {
 
 	        // Encode admin image from file path
 	        String base64Image = "";
-	        if (loggedInAdmin.getImagePath() != null) {
-	            try {
-	                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-	                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-	            } catch (IOException e) {
-	                e.printStackTrace();
+	        try {
+	            String imagePathInDb = loggedInAdmin.getImagePath();
+
+	            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+	                // Strip any folder prefix like "photograph/"
+	                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+	                // Get path to /WEB-INF/adminphotograph/
+	                String appRoot = servletContext.getRealPath("/");
+	                if (appRoot == null) {
+	                    appRoot = System.getProperty("user.dir") + "/webapp/";
+	                }
+
+	                // Final image path
+	                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+	                if (Files.exists(imagePath)) {
+	                    byte[] imageBytes = Files.readAllBytes(imagePath);
+	                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+	                } else {
+	                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+	                }
 	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
 	        }
+
 			
 
 	        model.addAttribute("base64Image", base64Image);

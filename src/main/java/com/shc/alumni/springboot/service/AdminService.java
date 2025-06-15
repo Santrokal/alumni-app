@@ -33,9 +33,19 @@ public class AdminService {
 		admin.setPassword(password);
 		admin.setDob(LocalDate.parse(dob));
 		admin.setPhoneNo(phoneNo);
-		admin.setImagePath("photograph/" + imagePath);
+		admin.setImagePath(imagePath);
 
 		adminRepository.save(admin);
 	}
+	public void adduserAdmin(String fullName, String emailAddress, String dob, String phoneNo, String imageFileName, String password) {
+        AdminEntity admin = new AdminEntity();
+        admin.setFullName(fullName);
+        admin.setEmailAddress(emailAddress);
+		admin.setDob(LocalDate.parse(dob));
+        admin.setPhoneNo(phoneNo);
+        admin.setImagePath(imageFileName);
+        admin.setPassword(password); // Set password to dob
+        adminRepository.save(admin);
+    }
 
 }

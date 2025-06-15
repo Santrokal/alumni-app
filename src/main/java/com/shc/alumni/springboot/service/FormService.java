@@ -154,7 +154,7 @@ public class FormService {
     }
 
     // Add the missing methods
-    @Transactional(readOnly = true)
+	@Transactional(readOnly = true)
     public List<Object[]> getAgmResponses(List<FormField> fields) {
         StringBuilder query = new StringBuilder("SELECT phone_number");
         for (FormField field : fields) {

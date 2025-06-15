@@ -558,31 +558,31 @@
     <!-- Add New User Form -->
     <div class="container">
         <h3 class="text-center my-3">Add New User</h3>
-        <form action="<%= request.getContextPath() %>/admin/adduser" method="post" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="fullName" class="form-label"><span style="color: red;">*</span>Full Name</label>
-                <input type="text" class="form-control" id="fullName" name="fullName" required>
-            </div>
-            <div class="mb-3">
-                <label for="emailAddress" class="form-label"><span style="color: red;">*</span>Email Address</label>
-                <input type="email" class="form-control" id="emailAddress" name="emailAddress" required>
-            </div>
-            <div class="mb-3">
-                <label for="dob" class="form-label"><span style="color: red;">*</span>Date of Birth</label>
-                <input type="date" class="form-control" id="dob" name="dob" required>
-            </div>
-            <div class="mb-3">
-                <label for="phoneNo" class="form-label">Phone Number</label>
-                <input type="text" class="form-control" id="phoneNo" name="phoneNo">
-            </div>
-            <div class="mb-3">
-                <label for="profileImage" class="form-label">Upload Profile Image</label>
-                <input type="file" class="form-control" id="profileImage" name="profileImage" accept="image/*">
-            </div>
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary">Add User</button>
-            </div>
-        </form>
+        <form action="<%= request.getContextPath() %>/admin/addusers" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="fullName" class="form-label"><span style="color: red;">*</span>Full Name</label>
+        <input type="text" class="form-control" id="fullName" name="fullName" required>
+    </div>
+    <div class="mb-3">
+        <label for="emailAddress" class="form-label"><span style="color: red;">*</span>Email Address</label>
+        <input type="email" class="form-control" id="emailAddress" name="emailAddress" required>
+    </div>
+    <div class="mb-3">
+        <label for="dob" class="form-label"><span style="color: red;">*</span>Date of Birth</label>
+        <input type="date" class="form-control" id="dob" name="dob" required>
+    </div>
+    <div class="mb-3">
+        <label for="phoneNo" class="form-label">Phone Number</label>
+        <input type="text" class="form-control" id="phoneNo" name="phoneNo">
+    </div>
+    <div class="mb-3">
+        <label for="image" class="form-label"><span style="color: red;">*</span>Upload Profile Image</label>
+        <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Add User</button>
+    </div>
+</form>
 
         <!-- Success and Error Messages -->
         <% if (request.getAttribute("successMessage") != null) { %>

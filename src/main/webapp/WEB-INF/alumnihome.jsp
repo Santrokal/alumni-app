@@ -709,7 +709,10 @@ color:#0056b3;
         %>
         <!-- Career Card -->
         <div class="career-card">
-            <img src="data:image/jpeg;base64,<%= company.getImageBase64() %>" alt="Career Image">
+                                           <img src="data:image/jpeg;base64,<%= company.getImageBase64() %>"
+     onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/company_default_logo.jpg';"
+     alt="Company Logo"
+     style="max-height: 200px; width: auto;">
             <div class="career-content">
                 <h3 class="career-title"><%= company.getPosition() %></h3>
                 <p class="career-text">

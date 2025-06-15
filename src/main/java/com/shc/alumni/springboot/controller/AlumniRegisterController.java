@@ -66,7 +66,7 @@ import com.shc.alumni.springboot.service.StoryService;
 public class AlumniRegisterController {
 
 
-	private static final String UPLOAD_DIR = "photograph";
+	//private static final String UPLOAD_DIR = "photograph";
 	
     @Autowired
     private MembershipRepository membershipRepository;
@@ -126,14 +126,19 @@ public class AlumniRegisterController {
     @GetMapping("/profile/image")
     public ResponseEntity<Resource> getProfileImage(@RequestParam String email) {
         AlumniRegisterEntity alumni = alumniRegisterService.findByEmail(email);
-        
-        if (alumni == null || alumni.getFilePath() == null) {
+
+        if (alumni == null || alumni.getFilePath() == null || alumni.getFilePath().isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            // Normalize file path (convert \ to / for compatibility)
-            Path filePath = Paths.get(alumni.getFilePath().replace("\\", "/"));
+            // Resolve the full path of the image inside /WEB-INF/photograph/
+            String appRoot = servletContext.getRealPath("/");
+            if (appRoot == null) {
+                appRoot = System.getProperty("user.dir") + "/webapp/";
+            }
+            Path imageDir = Paths.get(appRoot, "WEB-INF", "photograph");
+            Path filePath = imageDir.resolve(alumni.getFilePath());
 
             if (!Files.exists(filePath) || !Files.isReadable(filePath)) {
                 return ResponseEntity.notFound().build();
@@ -141,22 +146,35 @@ public class AlumniRegisterController {
 
             Resource resource = new UrlResource(filePath.toUri());
 
-            // Detect MIME type dynamically
             String contentType = Files.probeContentType(filePath);
             if (contentType == null) {
-                contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE; // Fallback
+                contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
             }
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"")
                     .body(resource);
+
         } catch (MalformedURLException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(null);
         } catch (IOException e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(null);
         }
     }
+
+    private Path getProfileImagePath() throws IOException {
+        String appRoot = servletContext.getRealPath("/");
+        if (appRoot == null) {
+            appRoot = System.getProperty("user.dir") + "/webapp/";
+        }
+        Path uploadPath = Paths.get(appRoot, "WEB-INF", "photograph");
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        return uploadPath;
+    }
+
 
 
     @PostMapping("/updateprofile")
@@ -236,17 +254,24 @@ public class AlumniRegisterController {
 
             // Handle profile image upload
             if (profileImage != null && !profileImage.isEmpty()) {
-                String fileName = fullname + "_" + profileImage.getOriginalFilename();
-                Path uploadPath = Paths.get(UPLOAD_DIR);
+                try {
+                    String originalFileName = profileImage.getOriginalFilename();
+                    String sanitizedFullname = fullname.trim().toLowerCase().replaceAll("[^a-zA-Z0-9]", "_");
+                    String extension = originalFileName != null && originalFileName.contains(".")
+                            ? originalFileName.substring(originalFileName.lastIndexOf("."))
+                            : ".png";
+                    String fileName = sanitizedFullname + "_" + System.currentTimeMillis() + extension;
 
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
+                    Path filePath = getProfileImagePath().resolve(fileName);
+                    Files.copy(profileImage.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                    alumni.setFilePath(filePath.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return "redirect:/profile?error=File upload failed.";
                 }
-
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(profileImage.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                alumni.setFilePath(filePath.toString());
             }
+
 
             // Save the updated alumni details
             alumniRegisterService.saveAlumni(alumni);
@@ -465,43 +490,22 @@ public class AlumniRegisterController {
             MultipartFile file = profileImage[0]; // Take the first file
             try {
                 String originalFileName = file.getOriginalFilename();
-                System.out.println("File received: " + originalFileName);
-
-                // Define the upload directory relative to the webapp root
-                String appRoot = servletContext.getRealPath("/");
-                if (appRoot == null) {
-                    System.out.println("ServletContext.getRealPath('/') returned null. Falling back to system property.");
-                    appRoot = System.getProperty("user.dir") + "/webapp/";
-                }
-                Path uploadPath = Paths.get(appRoot, "photograph");
-
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                    System.out.println("Created upload directory: " + uploadPath);
-                }
-
-                // Generate a unique filename
                 String sanitizedFullname = fullname.trim().toLowerCase().replaceAll("[^a-zA-Z0-9]", "_");
                 String extension = originalFileName != null && originalFileName.contains(".")
                         ? originalFileName.substring(originalFileName.lastIndexOf("."))
-                        : ".png"; // Default to .png if no extension
+                        : ".png";
                 String fileName = sanitizedFullname + "_" + System.currentTimeMillis() + extension;
-                Path filePath = uploadPath.resolve(fileName);
 
-                // Save the file
+                Path filePath = getProfileImagePath().resolve(fileName);
                 Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("File successfully saved: " + filePath);
 
-                // Store only the filename in the entity
-                alumni.setFilePath(fileName);
+                alumni.setFilePath(filePath.toString()); // Store full file path or just the name if needed
             } catch (IOException e) {
-                System.out.println("Error saving file: " + e.getMessage());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error uploading file: " + e.getMessage());
             }
-        } else {
-            System.out.println("No profile image uploaded.");
         }
+
 
         // Save the alumni entity
         try {

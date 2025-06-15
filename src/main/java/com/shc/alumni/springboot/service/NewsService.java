@@ -66,31 +66,27 @@ public class NewsService {
 
 	private String saveMediaFileToFolder(MultipartFile file, HttpServletRequest request) throws IOException {
 		// Get dynamic webapp root path
-		ServletContext servletContext = request.getServletContext();
-		String appRoot = servletContext.getRealPath("/");
-		if (appRoot == null) {
-			appRoot = System.getProperty("user.dir") + "/webapp/";
-		}
+		String basePath = request.getServletContext().getRealPath("/WEB-INF/news_folder");
+        Path folderPath = Paths.get(basePath);
+        
+        try {
+            if (!Files.exists(folderPath)) {
+                Files.createDirectories(folderPath);
+                System.out.println("Created directory: " + folderPath);
+            }
 
-		// Define folder name under app root
-		String folderName = "news_folder";
-		Path folderPath = Paths.get(appRoot, folderName);
+            String originalFileName = file.getOriginalFilename();
+            String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
+            Path filePath = folderPath.resolve(uniqueFilename);
 
-		// Create folder if it doesn't exist
-		if (!Files.exists(folderPath)) {
-			Files.createDirectories(folderPath);
-			System.out.println("Created directory: " + folderPath);
-		}
+            file.transferTo(filePath.toFile());
+            System.out.println("Saved file to: " + filePath);
+            return uniqueFilename;
+        } catch (IOException e) {
+            System.err.println("Failed to save file: " + e.getMessage());
+            throw new IOException("Error saving file to " + folderPath + ": " + e.getMessage(), e);
+        }
 
-		// Generate unique filename and save the file
-		String originalFileName = file.getOriginalFilename();
-		String uniqueFilename = System.currentTimeMillis() + "_" + originalFileName;
-		Path filePath = folderPath.resolve(uniqueFilename);
-
-		file.transferTo(filePath.toFile());
-		System.out.println("Saved media file to: " + filePath);
-
-		return uniqueFilename;
 	}
 
 	public void deleteById(Long id) {

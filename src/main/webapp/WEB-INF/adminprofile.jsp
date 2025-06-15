@@ -576,11 +576,12 @@
             <h1>Admin Profile</h1>
         </div>
         <div style="text-align: center; margin-bottom: 20px;">
-             <img src="data:image/jpeg;base64,${base64Image}" alt="Profile Image"
-             onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/defaultimag.png';"
-              class="img-fluid"
-              
-                     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">       </div>
+<img src="data:image/jpeg;base64,${base64Image}"
+     alt="Profile Image"
+     onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/defaultimag.png';"
+     class="img-fluid"
+     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />
+      </div>
         <%
             if (admin != null) {
         %>

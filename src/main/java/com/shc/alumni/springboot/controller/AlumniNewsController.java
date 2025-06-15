@@ -8,11 +8,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -79,41 +81,39 @@ public class AlumniNewsController {
         return "newsexpand";
     }
     
-    @GetMapping("/media/{filename}")
-    public ResponseEntity<Resource> serveMedia(@PathVariable String filename) {
+    @GetMapping("/news_folder/{filename}")
+    public ResponseEntity<Resource> serveStoryMedia(@PathVariable String filename, HttpServletRequest request) {
         try {
-            Path file = Paths.get("C:\\Users\\Mohammed Salman\\alumni-app\\src\\main\\webapp\\news_folder" + filename);
-            Resource resource = new UrlResource(file.toUri());
-            
-            System.out.println("Alumni - Serving media: " + file.toString()); // Debug log
-            
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = Files.probeContentType(file);
-                if (contentType == null) {
-                    if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
-                        contentType = "image/jpeg";
-                    } else if (filename.toLowerCase().endsWith(".png")) {
-                        contentType = "image/png";
-                    } else if (filename.toLowerCase().endsWith(".mp4")) {
-                        contentType = "video/mp4";
-                    } else {
-                        contentType = "application/octet-stream";
-                    }
-                }
-                System.out.println("Alumni - Content-Type: " + contentType); // Debug log
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .body(resource);
-            } else {
-                System.out.println("Alumni - File not found or unreadable: " + filename); // Debug log
+            // Get the real path to /WEB-INF/story_folder
+            String basePath = request.getServletContext().getRealPath("/WEB-INF/news_folder");
+            Path filePath = Paths.get(basePath, filename).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+
+            System.out.println("Serving file from: " + filePath);
+
+            if (!resource.exists() || !resource.isReadable()) {
+                System.out.println("File not found or unreadable: " + filePath);
                 return ResponseEntity.notFound().build();
             }
+
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(resource);
+
         } catch (Exception e) {
-            System.out.println("Alumni - Error serving media: " + e.getMessage()); // Debug log
+            System.err.println("Error serving file: " + filename + ", " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    
+    
+    
 
     @PostMapping("/news/{id}/comment")
     public String addComment(@PathVariable("id") int newsId, 

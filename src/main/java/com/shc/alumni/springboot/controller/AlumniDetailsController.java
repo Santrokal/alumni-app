@@ -18,6 +18,7 @@ import com.shc.alumni.springboot.entity.ContactEntity;
 import com.shc.alumni.springboot.repository.ContactRepository;
 import com.shc.alumni.springboot.service.AlumniRegisterService;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -38,6 +39,8 @@ public class AlumniDetailsController {
     private AlumniRegisterService alumniRegisterService;
     @Autowired
     private ContactRepository contactRepository;
+    @Autowired
+    private ServletContext servletContext;
     
     private static final Logger logger = LoggerFactory.getLogger(AlumniDetailsController.class);
 
@@ -56,14 +59,33 @@ public class AlumniDetailsController {
 
         // Encode admin image from file path
         String base64Image = "";
-        if (loggedInAdmin.getImagePath() != null) {
-            try {
-                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            String imagePathInDb = loggedInAdmin.getImagePath();
+
+            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+                // Strip any folder prefix like "photograph/"
+                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+                // Get path to /WEB-INF/adminphotograph/
+                String appRoot = servletContext.getRealPath("/");
+                if (appRoot == null) {
+                    appRoot = System.getProperty("user.dir") + "/webapp/";
+                }
+
+                // Final image path
+                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+                if (Files.exists(imagePath)) {
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                } else {
+                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
 		
 
         // Get messages
@@ -128,14 +150,33 @@ public class AlumniDetailsController {
 
         // Encode admin image from file path
         String base64Image = "";
-        if (loggedInAdmin.getImagePath() != null) {
-            try {
-                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            String imagePathInDb = loggedInAdmin.getImagePath();
+
+            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+                // Strip any folder prefix like "photograph/"
+                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+                // Get path to /WEB-INF/adminphotograph/
+                String appRoot = servletContext.getRealPath("/");
+                if (appRoot == null) {
+                    appRoot = System.getProperty("user.dir") + "/webapp/";
+                }
+
+                // Final image path
+                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+                if (Files.exists(imagePath)) {
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                } else {
+                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
 		
 		 List<ContactEntity> messages = contactRepository.findBySkippedFalse();
         model.addAttribute("messages", messages);

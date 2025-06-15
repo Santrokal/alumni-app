@@ -1,19 +1,11 @@
 package com.shc.alumni.springboot.entity;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.Date;
+
+import javax.persistence.*;
+
 import org.springframework.format.annotation.DateTimeFormat;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 
 @Entity
 @Table(name = "companies")
@@ -40,58 +32,36 @@ public class CompanyEntity {
     @Column(columnDefinition = "LONGTEXT")
     private String skills;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = new Date(); // Set the current date and time
-        }
-    }
-
-    @Transient // Not persisted in the database
-    private String imageBase64;
-    
-    
     @Column(name = "file_path", nullable = true)
     private String filePath;
-    
-
-    public String getFilePath() {
-		return filePath;
-	}
-
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}
-
-	public byte[] getFileData() {
-		return fileData;
-	}
-
-	public void setFileData(byte[] fileData) {
-		this.fileData = fileData;
-	}
-
-	@Lob
-    private byte[] image;
 
     @Lob
-    private byte[] fileData;
+    @Column(name = "file_data", nullable = true)
+    private byte[] fileData;  // optional: remove this if storing only in filesystem
+
+    @Lob
+    private byte[] image;
+
+    @Transient // Not persisted in DB
+    private String imageBase64;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
     
-    
+ // Add to your class
+    private String applications;
 
-    public String getCompanyemailid() {
-		return companyemailid;
-	}
+    public String getApplications() {
+        return applications;
+    }
 
-	public void setCompanyemailid(String companyemailid) {
-		this.companyemailid = companyemailid;
-	}
+    public void setApplications(String applications) {
+        this.applications = applications;
+    }
 
-	// Getters and Setters
+
+    // Getters and Setters
+
     public Long getId() {
         return id;
     }
@@ -124,6 +94,14 @@ public class CompanyEntity {
         this.role = role;
     }
 
+    public String getCompanyemailid() {
+        return companyemailid;
+    }
+
+    public void setCompanyemailid(String companyemailid) {
+        this.companyemailid = companyemailid;
+    }
+
     public String getAbout() {
         return about;
     }
@@ -148,29 +126,23 @@ public class CompanyEntity {
         this.skills = skills;
     }
 
-    public Date getCreatedAt() {
-        return createdAt;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
-    public String getImageBase64() {
-        if (image != null) {
-            return Base64.getEncoder().encodeToString(image);
-        }
-        return "";
-
+    public byte[] getFileData() {
+        return fileData;
     }
 
-    public void setImageBase64(String imageBase64) {
-        this.imageBase64 = imageBase64;
+    public void setFileData(byte[] fileData) {
+        this.fileData = fileData;
     }
 
-   
-
-	public byte[] getImage() {
+    public byte[] getImage() {
         return image;
     }
 
@@ -178,4 +150,22 @@ public class CompanyEntity {
         this.image = image;
     }
 
+    public String getImageBase64() {
+        if (image != null) {
+            return Base64.getEncoder().encodeToString(image);
+        }
+        return "";
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

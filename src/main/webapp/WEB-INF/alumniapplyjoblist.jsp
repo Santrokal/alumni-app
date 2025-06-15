@@ -344,8 +344,10 @@
                     <% for (CompanyEntity company : companiesList) { %>
                         <tr>
                             <td>
-                                <img src="data:image/jpeg;base64,<%= company.getImageBase64() %>" 
-                                     alt="Company Logo" style="height: 40px; width: auto;">
+                               <img src="data:image/jpeg;base64,<%= company.getImageBase64() %>"
+     onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/images/company_default_logo.jpg';"
+     alt="Company Logo"
+     style="max-height: 200px; width: auto;">
                             </td>
                             <td><%= company.getPosition() %></td>
                             <td><%= company.getLocation() %></td>

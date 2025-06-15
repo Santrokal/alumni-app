@@ -10,6 +10,9 @@ import com.shc.alumni.springboot.service.AlumniRegisterService;
 import com.shc.alumni.springboot.service.BillingService;
 
 import org.springframework.ui.Model;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.transaction.Transactional;
 
@@ -43,6 +46,8 @@ import java.util.Iterator;
 import java.lang.String;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +66,9 @@ public class AdminAlumniUploadDataController {
 
     @Autowired
     private BillPdfRepository billPdfRepository;
+    
+    @Autowired
+    private ServletContext servletContext;
 
     @Autowired
     private BillingService billingService;
@@ -71,7 +79,8 @@ public class AdminAlumniUploadDataController {
     
     @PostMapping("/admin/uploadMembershipData")
     @Transactional
-    public String uploadMembershipData(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+    public String uploadMembershipData(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes,
+    		 HttpServletRequest request) {
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("message", "Please select a file to upload.");
             return "redirect:/admin/uploaddata";
@@ -80,12 +89,12 @@ public class AdminAlumniUploadDataController {
         List<String> duplicatePhones = new ArrayList<>();
         List<String> successUploads = new ArrayList<>();
         Set<String> phoneNumbersInFile = new HashSet<>();
-        String uploadDir = "C:/uploads/bills/"; // Adjust path for your environment
 
         try {
             // Ensure upload directory exists
-            File dir = new File(uploadDir);
-            if (!dir.exists()) dir.mkdirs();
+        	 String uploadDir = request.getServletContext().getRealPath("/WEB-INF/membership_data/");
+             File dir = new File(uploadDir);
+             if (!dir.exists()) dir.mkdirs();
 
             Workbook workbook = new XSSFWorkbook(file.getInputStream());
             Sheet sheet = workbook.getSheetAt(0);
@@ -183,6 +192,7 @@ public class AdminAlumniUploadDataController {
         return "redirect:/admin/uploaddata";
     }
 
+
     private Map<String, Integer> validateAndMapHeaders(Row headerRow) {
         Map<String, Integer> columnMapping = new HashMap<>();
         for (Cell cell : headerRow) {
@@ -244,15 +254,33 @@ public class AdminAlumniUploadDataController {
 
         // Encode admin image from file path
         String base64Image = "";
-        if (loggedInAdmin.getImagePath() != null) {
-            try {
-                byte[] imageBytes = Files.readAllBytes(new File(loggedInAdmin.getImagePath()).toPath());
-                base64Image = Base64.getEncoder().encodeToString(imageBytes);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            String imagePathInDb = loggedInAdmin.getImagePath();
+
+            if (imagePathInDb != null && !imagePathInDb.trim().isEmpty()) {
+                // Strip any folder prefix like "photograph/"
+                String cleanFileName = Paths.get(imagePathInDb).getFileName().toString();
+
+                // Get path to /WEB-INF/adminphotograph/
+                String appRoot = servletContext.getRealPath("/");
+                if (appRoot == null) {
+                    appRoot = System.getProperty("user.dir") + "/webapp/";
+                }
+
+                // Final image path
+                Path imagePath = Paths.get(appRoot, "WEB-INF", "adminphotograph", cleanFileName);
+
+                if (Files.exists(imagePath)) {
+                    byte[] imageBytes = Files.readAllBytes(imagePath);
+                    base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                } else {
+                    System.out.println("⚠ Image not found at: " + imagePath.toString());
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-		
+
 
         // Add attributes to model
         model.addAttribute("base64Image", base64Image);
